@@ -1,0 +1,20 @@
+# Editor swap files
+.*.sw?
+*~
+
+# Python
+*.pyc
+*.pyo
+
+# Vagrant
+.vagrant
+
+# Nose
+.coverage
+
+# Randomfoo used by dan
+crap
+crap.*
+
+# Test coverage
+.coverage
