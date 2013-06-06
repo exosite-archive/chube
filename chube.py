@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import os
+import sys
 import code
 import logging
 import yaml
@@ -61,4 +62,16 @@ if __name__ == "__main__":
     conf = conf_builder.build()
     chube_api_handler.api_key = conf["api_key"]
 
+    if len(sys.argv) > 1:
+        # If you run `chube test Plan`, for example, we will import `plan.PlanTest`
+        # and execute its `run()` method.
+        class_under_test = sys.argv[-1]
+        mod = {"Plan": "plan"}[class_under_test]
+        test_suite = getattr(__import__("chube." + mod,
+                                        fromlist=[True]),
+                             class_under_test + "Test")
+        test_suite.run()
+        sys.exit(0)
+
+    # If we're not running tests, then just start the interpreter.
     code.interact(local=locals())

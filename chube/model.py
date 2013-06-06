@@ -21,6 +21,9 @@ class LinkedAttr:
 
 
 class Model:
+    direct_attrs = []
+    linked_attrs = []
+
     @classmethod
     def from_api_dict(cls, api_dict):
         """Factory method that instantiates Model subclasses from API-returned dicts."""
