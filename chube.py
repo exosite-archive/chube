@@ -66,7 +66,8 @@ if __name__ == "__main__":
         # If you run `chube test Plan`, for example, we will import `plan.PlanTest`
         # and execute its `run()` method.
         class_under_test = sys.argv[-1]
-        mod = {"Plan": "plan"}[class_under_test]
+        mod = {"Plan": "plan",
+               "Datacenter": "datacenter"}[class_under_test]
         test_suite = getattr(__import__("chube." + mod,
                                         fromlist=[True]),
                              class_under_test + "Test")
