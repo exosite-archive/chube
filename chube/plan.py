@@ -2,7 +2,6 @@ from decimal import Decimal
 
 from .api import api_handler
 from .model import *
-from .util import RequiresParams
 
 class Plan(Model):
     direct_attrs = [

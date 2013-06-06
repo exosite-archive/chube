@@ -1,6 +1,5 @@
 from .api import api_handler
 from .model import *
-from .util import RequiresParams
 
 class Datacenter(Model):
     direct_attrs = [
