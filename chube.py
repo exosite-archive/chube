@@ -67,7 +67,8 @@ if __name__ == "__main__":
         # and execute its `run()` method.
         class_under_test = sys.argv[-1]
         mod = {"Plan": "plan",
-               "Datacenter": "datacenter"}[class_under_test]
+               "Datacenter": "datacenter",
+               "Linode": "linode_obj"}[class_under_test]
         test_suite = getattr(__import__("chube." + mod,
                                         fromlist=[True]),
                              class_under_test + "Test")
