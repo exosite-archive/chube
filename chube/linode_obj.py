@@ -3,7 +3,10 @@
    In case you're wondering, this module is called 'linode_obj' instead of 'linode'
    because the latter conflicts with the Python Linode bindings."""
 from .api import api_handler
+from .util import RequiresParams
 from .model import *
+from .datacenter import Datacenter
+
 
 class Linode(Model):
     direct_attrs = [
@@ -52,6 +55,12 @@ class Linode(Model):
                    update_as="watchdog")
     ]
 
+    # The `datacenter` attribute is done with a deferred lookup.
+    def datacenter_getter(obj):
+        return Datacenter.find(api_id=obj.datacenter_id)
+    def datacenter_setter(obj, val):
+        raise NotImplementedError("You can't just go around changing the `datacenter` property. Who do you think you are?")
+    datacenter = property(datacenter_getter, datacenter_setter)
  
     @classmethod
     def search(cls, **kwargs):
@@ -81,8 +90,33 @@ class Linode(Model):
         if len(a) > 1: raise RuntimeError("More than one Linode found with the given criteria (%s)" % (kwargs,))
         return a[0]
 
+    @classmethod
+    @RequiresParams("plan", "datacenter", "payment_term")
+    def create(cls, **kwargs):
+        """Creates a new Linode.
+
+           `plan`: Either a Plan object or a numeric plan ID from `avail.linodeplans`
+           `datacenter`: Either a Datacenter object or a numeric datacenter ID from
+               `avail.datacenters`
+           `payment_term`: An integer number of months that represents a valid Linode
+               payment term (1, 12, or 24 at the time of this writing)."""
+        plan, datacenter, payment_term = (kwargs["plan"], kwargs["datacenter"], kwargs["payment_term"])
+        if type(plan) is not int: plan = plan.api_id
+        if type(datacenter) is not int: datacenter = datacenter.api_id
+        rval = api_handler.linode_create(planid=plan, datacenterid=datacenter, paymentterm=payment_term)
+        new_linode_id = rval[u"LinodeID"]
+        return cls.find(api_id=new_linode_id)
+
+    def save(self):
+        """Saves the Linode object to the API."""
+        api_params = {}
+        attrs = [attr for attr in self.direct_attrs if attr.is_savable()]
+        for attr in attrs:
+            api_params[attr.update_as] = attr.api_type(getattr(self, attr.local_name))
+        api_handler.linode_update(**api_params)
+
     def refresh(self):
-        """Refreshes the linode_obj with a new API call."""
+        """Refreshes the Linode object with a new API call."""
         new_inst = Linode.find(api_id=self.api_id)
         for attr in self.direct_attrs:
             setattr(self, attr.local_name, getattr(new_inst, attr.local_name))
@@ -98,9 +132,52 @@ class LinodeTest:
     def run(cls):
         import random
 
-        print "~~~ Listing all Linodes"
+        from .plan import Plan
+        from .datacenter import Datacenter
+
+        SUFFIX_CHARS = "abcdefghijklmnopqrtuvwxyz023456789"
+        SUFFIX_LEN = 8
+        display_group_suffix = "".join(random.sample(SUFFIX_CHARS, SUFFIX_LEN))
+        chube_display_group = "chube-test-%s" % (display_group_suffix)
+        linode_a_suffix = "".join(random.sample(SUFFIX_CHARS, SUFFIX_LEN))
+        linode_a_name = "chube-test-%s" % (linode_a_suffix,)
+        linode_b_suffix = "".join(random.sample(SUFFIX_CHARS, SUFFIX_LEN))
+        linode_b_name = "chube-test-%s" % (linode_b_suffix,)
+
+        print "~~~ Creating Linode '%s' by specifying Datacenter and Plan IDs" % (linode_a_name,)
         print
-        linode_objs = Linode.search()
+        plan = Plan.find(label="Linode 1024")
+        datacenter = Datacenter.find(location_begins="dallas")
+        linode_a = Linode.create(plan=plan.api_id, datacenter=datacenter.api_id, payment_term=1)
+        print linode_a
+        print
+        print "watchdog = %s" % (linode_a.watchdog,)
+        print "datacenter = %s" % (linode_a.datacenter,)
+
+        print
+        print "~~~ Updating Linode '%s' with the display group '%s'" % (linode_a_name, chube_display_group,)
+        print
+        linode_a.label = linode_a_name
+        linode_a.display_group = chube_display_group
+        linode_a.save()
+        raise SystemExit()
+
+        print "~~~ Creating Linode '%s' by specifying Datacenter and Plan objects" % (linode_b_name,)
+        print
+        plan = Plan.find(label="Linode 1024")
+        datacenter = Datacenter.find(location_begins="london")
+        linode_b = Linode.create(plan.api_id, datacenter.api_id, 1)
+        print linode_b
+        print
+        print "~~~ Updating Linode '%s' with the display group '%s'" % (linode_b_name, chube_display_group,)
+        print
+        linode_b.label = linode_b_name
+        linode_b.display_group = chube_display_group
+        linode_b.save()
+
+        print "~~~ Listing all Linodes in the display group '%s'" % (chube_display_group,)
+        print
+        linode_objs = Linode.search(display_group=chube_display_group)
         print linode_objs
         print
 

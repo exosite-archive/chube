@@ -18,14 +18,12 @@ class DirectAttr:
         self.api_type = api_type
         self.update_as = update_as
 
+    def is_savable(self):
+        return (self.update_as is not None)
 
-class LinkedAttr:
-    """A model attribute that corresponds to another object in the API."""
 
-
-class Model:
+class Model(object):
     direct_attrs = []
-    linked_attrs = []
 
     @classmethod
     def from_api_dict(cls, api_dict):
