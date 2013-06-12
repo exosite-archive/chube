@@ -122,6 +122,10 @@ class Linode(Model):
             setattr(self, attr.local_name, getattr(new_inst, attr.local_name))
         del new_inst
 
+    def destroy(self):
+        """Deletes the Linode."""
+        api_handler.linode_delete(linodeid=self.api_id)
+
     def __repr__(self):
         return "<Linode api_id=%d, label='%s'>" % (self.api_id, self.label)
 
@@ -160,13 +164,12 @@ class LinodeTest:
         linode_a.label = linode_a_name
         linode_a.display_group = chube_display_group
         linode_a.save()
-        raise SystemExit()
 
         print "~~~ Creating Linode '%s' by specifying Datacenter and Plan objects" % (linode_b_name,)
         print
         plan = Plan.find(label="Linode 1024")
         datacenter = Datacenter.find(location_begins="london")
-        linode_b = Linode.create(plan.api_id, datacenter.api_id, 1)
+        linode_b = Linode.create(plan=plan.api_id, datacenter=datacenter.api_id, payment_term=1)
         print linode_b
         print
         print "~~~ Updating Linode '%s' with the display group '%s'" % (linode_b_name, chube_display_group,)
@@ -184,22 +187,30 @@ class LinodeTest:
         sample_linode_obj = random.sample(linode_objs, 1)[0]
 
         linode_obj_id = sample_linode_obj.api_id
-        print "~~~ Fetching linode_obj '%s' by Linode ID" % (sample_linode_obj.label)
+        print "~~~ Fetching linode_obj '%s' by Linode ID" % (sample_linode_obj.label,)
         print
         linode_obj = Linode.find(api_id=linode_obj_id)
         print "api_id = %d" % (linode_obj.api_id,)
         print "datacenter_id = %d" % (linode_obj.datacenter_id,)
+        print "datacenter = %s" % (linode_obj.datacenter,)
         print "label = '%s'" % (linode_obj.label,)
         print "display_group = '%s'" % (linode_obj.display_group,)
-        print "create_dt = '%s'" % (linode_obj.create_dt)
+        print "create_dt = '%s'" % (linode_obj.create_dt,)
         print
         assert linode_obj.api_id == sample_linode_obj.api_id
         assert linode_obj.watchdog == sample_linode_obj.watchdog
 
-        print "~~~ Refreshing the Linode '%s'" % (linode_obj.label)
+        print "~~~ Refreshing the Linode '%s'" % (linode_obj.label,)
         print
         linode_obj.refresh()
         print linode_obj
         print
+
+        print "~~~ Deleting Linode '%s'" % (linode_a.label,)
+        print
+        linode_a.destroy()
+        print "~~~ Deleting Linode '%s'" % (linode_b.label,)
+        print
+        linode_b.destroy()
 
         print "~~~ Tests passed!"
