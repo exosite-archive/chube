@@ -56,11 +56,19 @@ class Linode(Model):
     ]
 
     # The `datacenter` attribute is done with a deferred lookup.
-    def datacenter_getter(obj):
-        return Datacenter.find(api_id=obj.datacenter_id)
-    def datacenter_setter(obj, val):
+    def datacenter_getter(self):
+        return Datacenter.find(api_id=self.datacenter_id)
+    def datacenter_setter(self, val):
         raise NotImplementedError("You can't just go around changing the `datacenter` property. Who do you think you are?")
     datacenter = property(datacenter_getter, datacenter_setter)
+
+    # The `ipaddresses` attribute
+    def ipaddresses_getter(self):
+        return IPAddress.search(linode=self.api_id)
+    def ipaddresses_setter(self, val):
+        raise NotImplementedError("Cannot set `ipaddresses` directly; use `add_private_ip` instead.")
+    ipaddresses = property(ipaddresses_getter, ipaddresses_setter)
+
  
     @classmethod
     def search(cls, **kwargs):
@@ -124,10 +132,73 @@ class Linode(Model):
 
     def destroy(self):
         """Deletes the Linode."""
-        api_handler.linode_delete(linodeid=self.api_id)
+        api_handler.linode_delete(linodeid=self.api_id, skipchecks=True)
 
     def __repr__(self):
         return "<Linode api_id=%d, label='%s'>" % (self.api_id, self.label)
+
+    def add_private_ip(self):
+        """Adds a private IP address to the Linode and returns it."""
+        rval = api_handler.linode_ip_addprivate(linodeid=self.api_id)
+        return IPAddress.find(linode=self.api_id, api_id=rval["IPAddressID"])
+
+
+class IPAddress(Model):
+    direct_attrs = [
+        # IDs
+        DirectAttr("api_id", u"IPADDRESSID", int, int),
+        DirectAttr("linode_id", u"LINODEID", int, int),
+
+        # Properties
+        DirectAttr("address", u"IPADDRESS", unicode, unicode),
+        DirectAttr("rdns_name", u"RDNS_NAME", unicode, unicode),
+        DirectAttr("is_public", u"ISPUBLIC", bool, int),
+    ]
+
+    # The `linode` attribute is done with a deferred lookup.
+    def linode_getter(self):
+        return Linode.find(api_id=self.linode_id)
+    def linode_setter(self, val):
+        raise NotImplementedError("Cannot assign IP address to a different Linode")
+    linode = property(linode_getter, linode_setter)
+
+    @classmethod
+    @RequiresParams("linode")
+    def search(cls, **kwargs):
+        """Returns the list of IPAddress instances that match the given criteria.
+        
+           At least `linode` is required. It can be a Linode object or a numeric Linode ID."""
+        linode = kwargs["linode"]
+        if type(linode) is not int: linode = linode.api_id
+        a = [cls.from_api_dict(d) for d in api_handler.linode_ip_list(linodeid=linode)]
+        del kwargs["linode"]
+
+        for k, v in kwargs.items():
+            a = [addr for addr in a if getattr(addr, k) == v]
+        return a
+
+    @classmethod
+    @RequiresParams("api_id", "linode")
+    def find(cls, **kwargs):
+        """Returns a single IPAddress instance that matches the given criteria.
+
+           For example, `IPAddress.find(api_id=102382061, linode=819201)`.
+
+           Both parameters are required. `linode` may be a Linode ID or a Linode object."""
+        linode = kwargs["linode"]
+        if type(linode) is not int: linode = linode.api_id
+        a = [cls.from_api_dict(d) for d in api_handler.linode_ip_list(linodeid=linode, ipaddressid=kwargs["api_id"])]
+        return a[0]
+
+    def refresh(self):
+        """Refreshes the IPAddress object with a new API call."""
+        new_inst = IPAddress.find(api_id=self.api_id, linode=self.linode_id)
+        for attr in self.direct_attrs:
+            setattr(self, attr.local_name, getattr(new_inst, attr.local_name))
+        del new_inst
+
+    def __repr__(self):
+        return "<IPAddress api_id=%d, address='%s'>" % (self.api_id, self.address)
 
 
 class LinodeTest:
@@ -177,6 +248,17 @@ class LinodeTest:
         linode_b.label = linode_b_name
         linode_b.display_group = chube_display_group
         linode_b.save()
+
+        print "~~~ Adding private IP address to Linode '%s'" % (linode_b_name,)
+        print
+        ip = linode_b.add_private_ip()
+        print ip
+
+        print "~~~ Fetching the IP addresses for Linode '%s'" % (linode_b_name,)
+        print
+        ips = linode_b.ipaddresses
+        print ips
+        print
 
         print "~~~ Listing all Linodes in the display group '%s'" % (chube_display_group,)
         print
