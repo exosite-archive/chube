@@ -68,6 +68,7 @@ if __name__ == "__main__":
         class_under_test = sys.argv[-1]
         mod = {"Plan": "plan",
                "Datacenter": "datacenter",
+               "Kernel": "kernel",
                "Linode": "linode_obj"}[class_under_test]
         test_suite = getattr(__import__("chube." + mod,
                                         fromlist=[True]),
