@@ -332,6 +332,14 @@ class Config(Model):
         a = [cls.from_api_dict(d) for d in api_handler.linode_config_list(linodeid=linode, configid=kwargs["api_id"])]
         return a[0]
 
+    def save(self):
+        """Saves the Config object to the API."""
+        api_params = {}
+        attrs = [attr for attr in self.direct_attrs if attr.is_savable()]
+        for attr in attrs:
+            api_params[attr.update_as] = attr.api_type(getattr(self, attr.local_name))
+        api_handler.linode_config_update(**api_params)
+
     def refresh(self):
         """Refreshes the Config object with a new API call."""
         new_inst = Config.find(api_id=self.api_id, linode=self.linode_id)
@@ -437,6 +445,14 @@ class Disk(Model):
         new_disk_id = rval[u"DiskID"]
         return cls.find(api_id=new_disk_id, linode=linode)
 
+    def save(self):
+        """Saves the Disk object to the API."""
+        api_params = {}
+        attrs = [attr for attr in self.direct_attrs if attr.is_savable()]
+        for attr in attrs:
+            api_params[attr.update_as] = attr.api_type(getattr(self, attr.local_name))
+        api_handler.linode_disk_update(**api_params)
+
     def refresh(self):
         """Refreshes the Disk object with a new API call."""
         new_inst = Disk.find(api_id=self.api_id, linode=self.linode_id)
@@ -535,6 +551,8 @@ class LinodeTest:
         print "~~~ Creating a Disk for Linode '%s'" % (linode_obj.label,)
         print
         disk = Disk.create(linode=linode_obj, label=disk_name, fstype="ext3", size=1000)
+        print disk
+        print
 
 
         print "~~~ Creating a Config for Linode '%s' using disk '%s'" % (linode_obj.label, disk.label)
@@ -549,6 +567,26 @@ class LinodeTest:
         print
 
 
+        print "~~~ Searching for that config"
+        print
+        rslt = Config.search(linode=linode_obj, api_id=config.api_id)
+        print rslt
+        print
+        assert len(rslt) == 1
+
+
+        print "~~~ Creating and adding swap space for Linode '%s'" % (linode_obj.label,)
+        print
+        swap_disk_suffix = "".join(random.sample(SUFFIX_CHARS, SUFFIX_LEN))
+        swap_disk_name = "chube-test-%s" % (swap_disk_suffix,)
+        swap_disk = Disk.create(linode=linode_obj, label=swap_disk_name, fstype="swap", size=1000)
+        config.disks = [disk, None, swap_disk] + 6 * [None]
+        config.save()
+
+
+        print "~~~ Checking for presence of that swap space in the Config's `disks` attribute"
+        print
+        assert bool([d for d in config.disks if d.api_id == swap_disk.api_id])
 
 
         print "~~~ Refreshing the Linode '%s'" % (linode_obj.label,)
