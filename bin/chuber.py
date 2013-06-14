@@ -38,8 +38,8 @@ class ConfigBuilder:
        to generate the config. You may modify it before calling build()."""
     def __init__(self):
         self.path = []
-        self.path.append(os.path.join("etc", "linode.conf"))
-        self.path.append(os.path.join(os.environ["HOME"], ".linode"))
+        self.path.append(os.path.join("etc", "chube.conf"))
+        self.path.append(os.path.join(os.environ["HOME"], ".chube"))
 
     def build(self):
         """Builds a ScriptConfig from the files it finds in `self.path`.
