@@ -78,6 +78,13 @@ class Linode(Model):
         raise NotImplementedError("Cannot set `configs` directly; use `add_config` instead.")
     configs = property(configs_getter, configs_setter)
 
+    # The `configs` attribute
+    def disks_getter(self):
+        return Disk.search(linode=self.api_id)
+    def disks_setter(self, val):
+        raise NotImplementedError("Cannot set `disks` directly; use `create_disk` instead.")
+    disks = property(disks_getter, disks_setter)
+
     # The `all_jobs` attribute
     def all_jobs_getter(self):
         return Job.search(linode=self.api_id, include_finished=True)
@@ -163,6 +170,10 @@ class Linode(Model):
         """Adds a private IP address to the Linode and returns it."""
         rval = api_handler.linode_ip_addprivate(linodeid=self.api_id)
         return IPAddress.find(linode=self.api_id, api_id=rval["IPAddressID"])
+
+    def create_disk(self, **kwargs):
+        """Adds a disk. See `help(Disk.create)` for more info."""
+        return Disk.create(linode=self.api_id, **kwargs)
 
     def boot(self, **kwargs):
         """Boots the Linode.
@@ -449,6 +460,7 @@ class Disk(Model):
         if type(linode) is not int: linode = linode.api_id
         a = [cls.from_api_dict(d) for d in api_handler.linode_disk_list(linodeid=linode, diskid=kwargs["api_id"])]
         return a[0] 
+
     @classmethod
     def create(cls, **kwargs):
         """Creates a new Disk.
@@ -812,7 +824,7 @@ class LinodeTest:
         print
         swap_disk_suffix = "".join(random.sample(SUFFIX_CHARS, SUFFIX_LEN))
         swap_disk_name = "chube-test-%s" % (swap_disk_suffix,)
-        swap_disk = Disk.create(linode=linode_obj, label=swap_disk_name, fstype="swap", size=1000)
+        swap_disk = linode_obj.create_disk(label=swap_disk_name, fstype="swap", size=1000)
         config.disks = [disk, None, swap_disk] + 6 * [None]
         config.save()
 
