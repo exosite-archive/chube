@@ -6,7 +6,6 @@ from .api import api_handler
 from .util import RequiresParams
 from .model import *
 from .datacenter import Datacenter
-from .kernel import Kernel
 
 
 class Linode(Model):
@@ -259,8 +258,11 @@ class Config(Model):
         """Returns the list of disks associated with the configuration.
 
            If any slot is empty, `None` will be returned in that slot."""
-        disk_ids = map(int, self.disk_list.split(","))
-        return [disk for disk in Disk.search(linodeid=self.linode_id) if disk.api_id in disk_ids]
+        disks = []
+        for disk_id in self.disk_list.split(","):
+            if disk_id == "": disks.append(None)
+            else: disks.append(Disk.find(linode=self.linode_id, api_id=int(disk_id)))
+        return disks
     def disks_setter(self, val):
         """Updates the list of disks associated with the configuration.
 
@@ -404,8 +406,7 @@ class Disk(Model):
         linode = kwargs["linode"]
         if type(linode) is not int: linode = linode.api_id
         a = [cls.from_api_dict(d) for d in api_handler.linode_disk_list(linodeid=linode, diskid=kwargs["api_id"])]
-        return a[0]
-
+        return a[0] 
     @classmethod
     def create(cls, **kwargs):
         """Creates a new Disk.
@@ -422,11 +423,34 @@ class Disk(Model):
         return cls.create_straightup(**kwargs)
 
     @classmethod
-    def create_from_distribution(cls, **kwargs):
-        raise NotImplementedError("Soon...")
-    @classmethod
     def create_from_stackscript(cls, **kwargs):
         raise NotImplementedError("Soon...")
+
+    @classmethod
+    @RequiresParams("linode", "distribution", "label", "size", "root_pass")
+    def create_from_distribution(cls, **kwargs):
+        """Creates a new Disk based on a Distribution.
+
+           `linode`: Either a Linode object or a numeric Linode ID
+           `distribution`: Either a Distribution object ro a numeric Distribution ID.
+           `label`: The name of the new disk.
+           `size`: The size, in MB, of the disk.
+           `root_pass`: The root user's password.
+           `root_ssh_key` (optional): Contents of the root user's `.ssh/authorized_keys` file."""
+        linode, distribution, label, fstype, size, root_pass = (
+            kwargs["linode"], kwargs["distribution"], kwargs["label"],
+            kwargs["size"], kwargs["size"], kwargs["root_pass"])
+        if type(linode) is not int: linode = linode.api_id
+        if type(distribution) is not int: distribution = distribution.api_id
+        if kwargs.has_key("root_ssh_key"):
+            root_ssh_key = kwargs["root_ssh_key"]
+        else:
+            root_ssh_key = ""
+        rval = api_handler.linode_disk_createfromdistribution(
+            linodeid=linode, distributionid=distribution, label=label, size=size,
+            rootpass=root_pass, rootsshkey=root_ssh_key)
+        new_disk_id = rval[u"DiskID"]
+        return cls.find(api_id=new_disk_id, linode=linode)
 
     @classmethod
     @RequiresParams("linode", "label", "fstype", "size")
@@ -471,7 +495,8 @@ class LinodeTest:
         import random
 
         from .plan import Plan
-        from .datacenter import Datacenter
+        from .kernel import Kernel
+        from .distribution import Distribution
 
         SUFFIX_CHARS = "abcdefghijklmnopqrtuvwxyz023456789"
         SUFFIX_LEN = 8
@@ -516,6 +541,7 @@ class LinodeTest:
         print
         ip = linode_b.add_private_ip()
         print ip
+        print
 
         print "~~~ Fetching the IP addresses for Linode '%s'" % (linode_b_name,)
         print
@@ -548,9 +574,19 @@ class LinodeTest:
 
         disk_suffix = "".join(random.sample(SUFFIX_CHARS, SUFFIX_LEN))
         disk_name = "chube-test-%s" % (disk_suffix,)
-        print "~~~ Creating a Disk for Linode '%s'" % (linode_obj.label,)
+        print "~~~ Creating a Disk from scratch for Linode '%s'" % (linode_obj.label,)
         print
         disk = Disk.create(linode=linode_obj, label=disk_name, fstype="ext3", size=1000)
+        print disk
+        print
+
+
+        disk_suffix = "".join(random.sample(SUFFIX_CHARS, SUFFIX_LEN))
+        disk_name = "chube-test-%s" % (disk_suffix,)
+        print "~~~ Creating a Disk from a distribution for Linode '%s'" % (linode_obj.label,)
+        print
+        distro = Distribution.find(label=u"Debian 7")
+        disk = Disk.create(linode=linode_obj, distribution=distro, label=disk_name, size=1000, root_pass="czGgsxCvFHkR")
         print disk
         print
 
@@ -586,7 +622,7 @@ class LinodeTest:
 
         print "~~~ Checking for presence of that swap space in the Config's `disks` attribute"
         print
-        assert bool([d for d in config.disks if d.api_id == swap_disk.api_id])
+        assert bool([d for d in config.disks if d is not None and d.api_id == swap_disk.api_id])
 
 
         print "~~~ Refreshing the Linode '%s'" % (linode_obj.label,)
@@ -595,6 +631,7 @@ class LinodeTest:
         print linode_obj
         print
 
+ 
         print "~~~ Deleting Linode '%s'" % (linode_a.label,)
         print
         linode_a.destroy()

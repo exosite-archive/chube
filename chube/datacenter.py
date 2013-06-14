@@ -10,7 +10,7 @@ class Datacenter(Model):
     @classmethod
     def search(cls, **kwargs):
         """Returns the list of Datacenter instances that match the given criteria.
-        
+
            The special paramater `location_begins` allows you to case-insensitively
            match the beginning of the location string. For example,
            `Datacenter.search(location_begins='dallas')`."""

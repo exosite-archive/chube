@@ -69,6 +69,7 @@ if __name__ == "__main__":
         mod = {"Plan": "plan",
                "Datacenter": "datacenter",
                "Kernel": "kernel",
+               "Distribution": "distribution",
                "Linode": "linode_obj"}[class_under_test]
         test_suite = getattr(__import__("chube." + mod,
                                         fromlist=[True]),
