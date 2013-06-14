@@ -78,6 +78,20 @@ class Linode(Model):
         raise NotImplementedError("Cannot set `configs` directly; use `add_config` instead.")
     configs = property(configs_getter, configs_setter)
 
+    # The `all_jobs` attribute
+    def all_jobs_getter(self):
+        return Job.search(linode=self.api_id, include_finished=True)
+    def all_jobs_setter(self, val):
+        raise NotImplementedError("Cannot set `all_jobs` attribute.")
+    all_jobs = property(all_jobs_getter, all_jobs_setter)
+
+    # The `pending_jobs` attribute
+    def pending_jobs_getter(self):
+        return Job.search(linode=self.api_id, include_finished=False)
+    def pending_jobs_setter(self, val):
+        raise NotImplementedError("Cannot set `pending_jobs` attribute.")
+    pending_jobs = property(pending_jobs_getter, pending_jobs_setter)
+
     @classmethod
     def search(cls, **kwargs):
         """Returns the list of Linode instances that match the given criteria.
@@ -451,8 +465,29 @@ class Disk(Model):
         return cls.create_straightup(**kwargs)
 
     @classmethod
+    @RequiresParams("linode", "stackscript", "ss_input", "distribution", "label", "size", "root_pass")
     def create_from_stackscript(cls, **kwargs):
-        raise NotImplementedError("Soon...")
+        """Creates a new Disk based on a Stackscript.
+
+           `linode`: Either a Linode object or a numeric Linode ID.
+           `stackscript`: Either a Stackscript object or a numeric Stackscript ID.
+           `ss_input`: The UDF responses for the Stackscript (a StackscriptInput instance).
+           `distribution`: Either a Distribution object or a numeric Distribution ID.
+           `label`: The name of the new disk.
+           `size`: The size, in MB, of the new disk.
+           `root_pass`: The root user's password."""
+        linode, stackscript, ss_input, distribution, label, size, root_pass = (
+            kwargs["linode"], kwargs["stackscript"], kwargs["ss_input"],
+            kwargs["distribution"], kwargs["label"], kwargs["size"], kwargs["root_pass"])
+        if type(linode) is not int: linode = linode.api_id
+        if type(stackscript) is not int: stackscript = stackscript.api_id
+        if type(distribution) is not int: distribution = distribution.api_id
+        rval = api_handler.linode_disk_createfromstackscript(
+            linodeid=linode, stackscriptid=stackscript,
+            stackscriptudfresponses=unicode(ss_input), distributionid=distribution,
+            label=label, size=size, rootpass=root_pass)
+        new_disk_id = rval[u"DiskID"]
+        return cls.find(api_id=new_disk_id, linode=linode)
 
     @classmethod
     @RequiresParams("linode", "distribution", "label", "size", "root_pass")
@@ -460,7 +495,7 @@ class Disk(Model):
         """Creates a new Disk based on a Distribution.
 
            `linode`: Either a Linode object or a numeric Linode ID
-           `distribution`: Either a Distribution object ro a numeric Distribution ID.
+           `distribution`: Either a Distribution object or a numeric Distribution ID.
            `label`: The name of the new disk.
            `size`: The size, in MB, of the disk.
            `root_pass`: The root user's password.
@@ -584,7 +619,7 @@ class Job(Model):
 
         linode = kwargs["linode"]
         if type(linode) is not int: linode = linode.api_id
-        a = [cls.from_api_dict(d) for d in api_handler.linode_job_list(linodeid=linode, pendinonly=(not include_finished))]
+        a = [cls.from_api_dict(d) for d in api_handler.linode_job_list(linodeid=linode, pendingonly=(not include_finished))]
         del kwargs["linode"]
 
         for k, v in kwargs.items():
@@ -640,6 +675,7 @@ class LinodeTest:
         from .plan import Plan
         from .kernel import Kernel
         from .distribution import Distribution
+        from .stackscript import Stackscript, StackscriptInput
 
         SUFFIX_CHARS = "abcdefghijklmnopqrtuvwxyz023456789"
         SUFFIX_LEN = 8
@@ -734,6 +770,24 @@ class LinodeTest:
         print
 
 
+        disk_suffix = "".join(random.sample(SUFFIX_CHARS, SUFFIX_LEN))
+        disk_name = "chube-test-%s" % (disk_suffix,)
+        stackscript_suffix = "".join(random.sample(SUFFIX_CHARS, SUFFIX_LEN))
+        stackscript_name = "chube-test-%s" % (stackscript_suffix,)
+        print "~~~ Creating a Disk from a stackscript for Linode '%s'" % (linode_obj.label,)
+        print
+        distro = Distribution.find(label=u"Debian 7")
+        stackscript = Stackscript.create(label=stackscript_name, distributions=[distro],
+                                         script=u"#!/bin/bash\n\n/bin/true")
+        ss_input = StackscriptInput(blah="foo")
+        disk = Disk.create(linode=linode_obj, stackscript=stackscript,
+                           ss_input=ss_input, distribution=distro,
+                           label=stackscript_name, size=1000, root_pass="czGgsxCvFHkR")
+        print disk
+        print
+        stackscript.destroy()
+
+
         print "~~~ Creating a Config for Linode '%s' using disk '%s'" % (linode_obj.label, disk.label)
         print
         kerns = Kernel.search()
@@ -778,10 +832,23 @@ class LinodeTest:
         print "~~~ Booting the Linode '%s'" % (linode_obj.label,)
         print
         job = linode_obj.boot(config=config)
+        print "~~~ Listing all jobs for Linode '%s'" % (linode_obj.label,)
+        print
+        rslt_1 = Job.search(linode=linode_obj, include_finished=True)
+        print rslt_1
+        print 
+        print "~~~ Listing all jobs for Linode '%s' the other way" % (linode_obj.label,)
+        print
+        rslt_2 = linode_obj.all_jobs
+        assert sorted([j.api_id for j in rslt_1]) == sorted([j.api_id for j in rslt_2])
+        print rslt_2
+        print
         print "~~~ Listing active jobs for Linode '%s'" % (linode_obj.label,)
         print
-        print Job.search(linode=linode_obj)
+        print linode_obj.pending_jobs
         print
+
+
         print "~~~ Waiting for the boot job '%s' to finish" % (job.label,)
         print
         job.wait()

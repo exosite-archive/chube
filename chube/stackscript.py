@@ -1,9 +1,25 @@
 """Module for the Stackscript model."""
+import json
 
 from .api import api_handler
 from .util import RequiresParams
 from .model import *
 from .distribution import Distribution
+
+
+class StackscriptInput:
+    """The inputs required by a Stackscript.
+    
+       Use like
+       
+           ssi = StackscriptInput(blah="1", foo="2,3,4")
+           ssi.add_input("bar", "baz")"""
+    def __init__(self, **kwargs):
+        self._responses = kwargs
+    def add_input(self, name, val):
+        self._responses[name] = val
+    def __str__(self):
+        return json.dumps(self._responses)
 
 
 class Stackscript(Model):

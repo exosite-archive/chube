@@ -5,5 +5,5 @@ from .plan import Plan
 from .datacenter import Datacenter
 from .kernel import Kernel
 from .distribution import Distribution
-from .stackscript import Stackscript
+from .stackscript import Stackscript, StackscriptInput
 from .linode_obj import Linode, Disk, Config, IPAddress
