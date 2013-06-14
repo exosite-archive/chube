@@ -152,7 +152,7 @@ class Linode(Model):
 
     def boot(self, **kwargs):
         """Boots the Linode.
-        
+ 
            `config` (optional): A Config object or a numerical Config ID."""
         api_args = {"linodeid": self.api_id}
         if kwargs.has_key("config"):
@@ -161,6 +161,19 @@ class Linode(Model):
             else:
                 api_args["configid"] = kwargs["config"]
         rval = api_handler.linode_boot(**api_args)
+        return Job.find(linode=self.api_id, api_id=rval["JobID"], include_finished=True)
+
+    def reboot(self, **kwargs):
+        """Reboots the Linode.
+        
+           `config` (optional): A Config object or a numerical Config ID."""
+        api_args = {"linodeid": self.api_id}
+        if kwargs.has_key("config"):
+            if type(kwargs["config"]) is not int:
+                api_args["configid"] = kwargs["config"].api_id
+            else:
+                api_args["configid"] = kwargs["config"]
+        rval = api_handler.linode_reboot(**api_args)
         return Job.find(linode=self.api_id, api_id=rval["JobID"], include_finished=True)
 
 
@@ -776,6 +789,10 @@ class LinodeTest:
         print "is_success() = %s" % (job.is_success(),)
         print "message = '%s'" % (job.message,)
         print
+
+        print "~~~ Rebooting the Linode '%s'" % (linode_obj.label,)
+        print
+        job = linode_obj.reboot(config=config)
 
  
         print "~~~ Deleting Linode '%s'" % (linode_a.label,)
