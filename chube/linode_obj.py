@@ -2,6 +2,8 @@
 
    In case you're wondering, this module is called 'linode_obj' instead of 'linode'
    because the latter conflicts with the Python Linode bindings."""
+import time
+
 from .api import api_handler
 from .util import RequiresParams
 from .model import *
@@ -147,6 +149,19 @@ class Linode(Model):
         """Adds a private IP address to the Linode and returns it."""
         rval = api_handler.linode_ip_addprivate(linodeid=self.api_id)
         return IPAddress.find(linode=self.api_id, api_id=rval["IPAddressID"])
+
+    def boot(self, **kwargs):
+        """Boots the Linode.
+        
+           `config` (optional): A Config object or a numerical Config ID."""
+        api_args = {"linodeid": self.api_id}
+        if kwargs.has_key("config"):
+            if type(kwargs["config"]) is not int:
+                api_args["configid"] = kwargs["config"].api_id
+            else:
+                api_args["configid"] = kwargs["config"]
+        rval = api_handler.linode_boot(**api_args)
+        return Job.find(linode=self.api_id, api_id=rval["JobID"], include_finished=True)
 
 
 class IPAddress(Model):
@@ -488,6 +503,121 @@ class Disk(Model):
         return "<Disk api_id=%d, label='%s'>" % (self.api_id, self.label)
 
 
+class Job(Model):
+    direct_attrs = [
+        # IDs
+        DirectAttr("api_id", u"JOBID", int, int),
+        DirectAttr("linode_id", u"LINODEID", int, int),
+
+        # Properties
+        DirectAttr("label", u"LABEL", unicode, unicode),
+        DirectAttr("entered_dt", u"ENTERED_DT", unicode, unicode),
+        DirectAttr("start_dt", u"HOST_START_DT", unicode, unicode),
+        DirectAttr("finish_dt", u"HOST_FINISH_DT", unicode, unicode),
+        DirectAttr("action", u"ACTION", unicode, unicode),
+        DirectAttr("message", u"HOST_MESSAGE", unicode, unicode),
+
+        # This can come back as either the empty string or an int, so we
+        # like to massage it as a property before giving it to the user.
+        DirectAttr("_duration_str", u"DURATION", unicode, unicode),
+        # This can come back as either the empty string or an int, so we
+        # would prefer it if the user used our convenience methods.
+        DirectAttr("_host_success", u"HOST_SUCCESS", unicode, unicode)
+    ]
+
+    # The `linode` attribute is done with a deferred lookup.
+    def linode_getter(self):
+        return Linode.find(api_id=self.linode_id)
+    def linode_setter(self, val):
+        raise NotImplementedError("Cannot assign Job to a different Linode")
+    linode = property(linode_getter, linode_setter)
+
+    # The `duration` attribute needs to be massaged before returning it to the
+    # user. If the job isn't finished yet, we'll return `None`.
+    def duration_getter(self):
+        if self._duration_str == u"":
+            return None
+        return int(self._duration_str)
+    def duration_setter(self):
+        raise NotImplementedError("Cannot set Job duration")
+    duration = property(duration_getter, duration_setter)
+
+    # The `host_success` attribute doesn't fit neatly into a type, so we provide
+    # these convenience methods.
+    def is_done(self):
+        """Determines whether the Job is finished (either successfully or unsuccessfully)."""
+        return self._host_success in (u"0", u"1")
+    def is_success(self):
+        """Determines whether the Job finished successfully.
+        
+           Returns False if the job either hasn't finished yet _or_ has failed."""
+        return self._host_success == u"1"
+    def is_fail(self):
+        """Determines whether the Job has failed."""
+        return self._host_success == u"0"
+
+    @classmethod
+    @RequiresParams("linode")
+    def search(cls, **kwargs):
+        """Returns the list of Job instances that match the given criteria.
+        
+           `linode` (required): A Linode object or a numeric Linode ID.
+           `include_finished` (optional): If True, we will search not only pending
+               jobs but all jobs."""
+        include_finished = False
+        if kwargs.has_key("include_finished"):
+            include_finished = kwargs["include_finished"]
+            del kwargs["include_finished"]
+
+        linode = kwargs["linode"]
+        if type(linode) is not int: linode = linode.api_id
+        a = [cls.from_api_dict(d) for d in api_handler.linode_job_list(linodeid=linode, pendinonly=(not include_finished))]
+        del kwargs["linode"]
+
+        for k, v in kwargs.items():
+            a = [addr for addr in a if getattr(addr, k) == v]
+        return a
+
+    @classmethod
+    def find(cls, **kwargs):
+        """Returns a single Job instance that matches the given criteria.
+
+           For example, `Job.find(api_id=102382061, linode=819201)`.
+
+           Both parameters are required. `linode` may be a Linode ID or a Linode object."""
+        a = cls.search(**kwargs)
+        if len(a) < 1: raise RuntimeError("No Job found with the given criteria (%s)" % (kwargs,))
+        if len(a) > 1: raise RuntimeError("More than one Job found with the given criteria (%s)" % (kwargs,))
+        return a[0]
+
+    def wait(self, timeout=120, check_interval=5):
+        """Blocks until the job is finished.
+
+           `timeout` (optional): Number of seconds to wait before giving up.
+           `check_interval` (optional): How often to check, in seconds.
+
+           Raises a `RuntimeError` if the timeout is reached. Raises a `ValueError` if
+           the job fails."""
+        for t in range(0, timeout, check_interval):
+            self.refresh()
+            if self.is_fail():
+                raise ValueError("Job '%s' on Linode '%s' failed" % (self.label, self.linode.label))
+            if self.is_success():
+                return
+            time.sleep(check_interval)
+        raise RuntimeError("Job '%s' on Linode '%s' took longer than %d seconds to complete; aborting." % (self.label, self.linode.label, timeout))
+
+    def refresh(self):
+        """Refreshes the Job object with a new API call."""
+        new_inst = Job.find(api_id=self.api_id, linode=self.linode_id)
+        for attr in self.direct_attrs:
+            setattr(self, attr.local_name, getattr(new_inst, attr.local_name))
+        del new_inst
+
+    def __repr__(self):
+        return "<Job api_id=%d, label='%s'>" % (self.api_id, self.label)
+
+
 class LinodeTest:
     """Suite of integration tests to run when `chube test Linode` is called."""
     @classmethod
@@ -629,6 +759,22 @@ class LinodeTest:
         print
         linode_obj.refresh()
         print linode_obj
+        print
+
+
+        print "~~~ Booting the Linode '%s'" % (linode_obj.label,)
+        print
+        job = linode_obj.boot(config=config)
+        print "~~~ Listing active jobs for Linode '%s'" % (linode_obj.label,)
+        print
+        print Job.search(linode=linode_obj)
+        print
+        print "~~~ Waiting for the boot job '%s' to finish" % (job.label,)
+        print
+        job.wait()
+        print "duration = %d" % (job.duration,)
+        print "is_success() = %s" % (job.is_success(),)
+        print "message = '%s'" % (job.message,)
         print
 
  
