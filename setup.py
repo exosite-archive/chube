@@ -2,7 +2,7 @@ from distutils.core import setup
 
 setup(
         name='chube',
-        version='0.1.6',
+        version='0.1.7',
         author='Exosite',
         author_email='danslimmon@exosite.com',
         packages=['chube'],
@@ -13,6 +13,7 @@ setup(
         long_description=open('README.md').read(),
         install_requires=[
             "linode-python >= 1.0",
-            "PyYAML >= 3.10"
+            "PyYAML >= 3.10",
+            "pycurl >= 7.10"
         ],
 )
