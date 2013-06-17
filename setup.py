@@ -2,7 +2,7 @@ from distutils.core import setup
 
 setup(
         name='chube',
-        version='0.1.4',
+        version='0.1.5',
         author='Exosite',
         author_email='danslimmon@exosite.com',
         packages=['chube'],
@@ -12,6 +12,7 @@ setup(
         description='Object-oriented bindings for the Linode API',
         long_description=open('README.md').read(),
         install_requires=[
-            "linode-python >= 1.0"
+            "linode-python >= 1.0",
+            "yaml >= 3.10"
         ],
 )
