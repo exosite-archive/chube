@@ -11,8 +11,16 @@ class Kernel(Model):
 
     @classmethod
     def search(cls, **kwargs):
-        """Returns the list of all Kernel instances that match the given criteria."""
+        """Returns the list of all Kernel instances that match the given criteria.
+
+           The special paramater `label_begins` allows you to case-insensitively
+           match the beginning of the label string. For example,
+           `Kernel.search(label_begins='Latest 64 bit')`."""
         a = [cls.from_api_dict(d) for d in api_handler.avail_kernels()]
+        if kwargs.has_key("label_begins"):
+            a = [kernel for kernel in a if
+                 kernel.label.lower().startswith(kwargs["label_begins"].lower())]
+            del kwargs["label_begins"]
         for k, v in kwargs.items():
             a = [kernel for kernel in a if getattr(kernel, k) == v]
         return a
