@@ -13,6 +13,6 @@ setup(
         long_description=open('README.md').read(),
         install_requires=[
             "linode-python >= 1.0",
-            "yaml >= 3.10"
+            "PyYAML >= 3.10"
         ],
 )
