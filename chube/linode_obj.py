@@ -201,6 +201,11 @@ class Linode(Model):
         rval = api_handler.linode_reboot(**api_args)
         return Job.find(linode=self.api_id, api_id=rval["JobID"], include_finished=True)
 
+    def shutdown(self, **kwargs):
+        """Shuts down the Linode."""
+        rval = api_handler.linode_shutdown(linodeid=self.api_id)
+        return Job.find(linode=self.api_id, api_id=rval["JobID"], include_finished=True)
+
 
 class IPAddress(Model):
     direct_attrs = [
@@ -869,9 +874,15 @@ class LinodeTest:
         print "message = '%s'" % (job.message,)
         print
 
-        print "~~~ Rebooting the Linode '%s'" % (linode_obj.label,)
+
+        print "~~~ Rebooting the Linode '%s'" % (linode_b.label,)
         print
-        job = linode_obj.reboot(config=config)
+        job = linode_b.reboot(config=config)
+
+
+        print "~~~ Shutting down Linode '%s'" % (linode_a.label,)
+        print
+        job = linode_a.shutdown()
 
  
         print "~~~ Deleting Linode '%s'" % (linode_a.label,)
