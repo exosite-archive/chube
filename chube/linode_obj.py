@@ -206,6 +206,21 @@ class Linode(Model):
         rval = api_handler.linode_shutdown(linodeid=self.api_id)
         return Job.find(linode=self.api_id, api_id=rval["JobID"], include_finished=True)
 
+    @RequiresParams("plan", "datacenter", "payment_term")
+    def clone(self, **kwargs):
+        """Clones a Linode and gives you full privileges to it.
+
+           `plan` (required): Can be a Plan object or a numeric plan ID.
+           `datacenter` (required): Can be a Datacenter object or a numeric datacenter ID.
+           `payment_term` (required): An integer number of months that represents a valid
+               Linode payment term (1, 12, or 24 at the time of this writing)."""
+        plan, datacenter, payment_term = (kwargs["plan"], kwargs["datacenter"],
+                                          kwargs["payment_term"])
+        if type(plan) is not int: plan = plan.api_id
+        if type(datacenter) is not int: datacenter = datacenter.api_id
+        rval = api_handler.linode_clone(linodeid=self.api_id, planid=plan, datacenterid=datacenter, paymentterm=payment_term)
+        return Linode.find(api_id=rval["LinodeID"])
+
 
 class IPAddress(Model):
     direct_attrs = [
@@ -727,11 +742,22 @@ class LinodeTest:
         linode_b = Linode.create(plan=plan.api_id, datacenter=datacenter.api_id, payment_term=1)
         print linode_b
         print
-        print "~~~ Updating Linode '%s' with the display group '%s'" % (linode_b_name, chube_display_group,)
+        print "~~~ Updating Linode '%s' with the display group '%s'" % (linode_b.label, chube_display_group,)
         print
         linode_b.label = linode_b_name
         linode_b.display_group = chube_display_group
         linode_b.save()
+
+        print "~~~ Waiting for job(s) to finish on Linode '%s'" % (linode_a.label,)
+        print
+        [j.wait() for j in linode_a.pending_jobs]
+        print "~~~ Cloning Linode '%s'" % (linode_a.label,)
+        print
+        a_clone = linode_a.clone(plan=plan, datacenter=datacenter, payment_term=1)
+
+        print "~~~ Destroying clone Linode '%s'" % (a_clone.label,)
+        print
+        a_clone.destroy()
 
         print "~~~ Adding private IP address to Linode '%s'" % (linode_b_name,)
         print
@@ -877,7 +903,7 @@ class LinodeTest:
 
         print "~~~ Rebooting the Linode '%s'" % (linode_b.label,)
         print
-        job = linode_b.reboot(config=config)
+        job = linode_obj.reboot(config=config)
 
 
         print "~~~ Shutting down Linode '%s'" % (linode_a.label,)
