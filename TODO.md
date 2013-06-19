@@ -2,7 +2,6 @@ Linode
 -----
 
 * Implement `linode.resize`
-* Implement `linode.disk.delete`
 * Implement `linode.disk.duplicate`
 * Implement `linode.disk.resize`
 

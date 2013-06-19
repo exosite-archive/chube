@@ -579,6 +579,10 @@ class Disk(Model):
             setattr(self, attr.local_name, getattr(new_inst, attr.local_name))
         del new_inst
 
+    def destroy(self):
+        """Deletes the Disk."""
+        api_handler.linode_disk_delete(linodeid=self.linode.api_id, diskid=self.api_id)
+
     def __repr__(self):
         return "<Disk api_id=%d, label='%s'>" % (self.api_id, self.label)
 
@@ -811,6 +815,9 @@ class LinodeTest:
         disk = Disk.create(linode=linode_obj, distribution=distro, label=disk_name, size=1000, root_pass="czGgsxCvFHkR")
         print disk
         print
+        print "~~~ Destroying disk '%s'" % (disk.label,)
+        print
+        disk.destroy()
 
 
         disk_suffix = "".join(random.sample(SUFFIX_CHARS, SUFFIX_LEN))
