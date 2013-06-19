@@ -221,6 +221,15 @@ class Linode(Model):
         rval = api_handler.linode_clone(linodeid=self.api_id, planid=plan, datacenterid=datacenter, paymentterm=payment_term)
         return Linode.find(api_id=rval["LinodeID"])
 
+    @RequiresParams("plan")
+    def resize(self, **kwargs):
+        """Moves a Linode to a new server on a different Plan.
+
+           `plan` (required): Can be a Plan object or a numeric plan ID."""
+        plan = kwargs["plan"]
+        if type(plan) is not int: plan = plan.api_id
+        api_handler.linode_resize(linodeid=self.api_id, planid=plan)
+
 
 class IPAddress(Model):
     direct_attrs = [
@@ -733,7 +742,7 @@ class LinodeTest:
         print "datacenter = %s" % (linode_a.datacenter,)
 
         print
-        print "~~~ Updating Linode '%s' with the display group '%s'" % (linode_a_name, chube_display_group,)
+        print "~~~ Updating Linode '%s' with the display group '%s'" % (linode_a.label, chube_display_group,)
         print
         linode_a.label = linode_a_name
         linode_a.display_group = chube_display_group
