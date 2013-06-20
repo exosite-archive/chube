@@ -592,6 +592,18 @@ class Disk(Model):
         """Deletes the Disk."""
         api_handler.linode_disk_delete(linodeid=self.linode.api_id, diskid=self.api_id)
 
+    def resize(self, new_size):
+        """Resizes the Disk.
+
+           `new_size`: The new size of the disk, in MB."""
+        api_handler.linode_disk_resize(linodeid=self.linode.api_id, diskid=self.api_id,
+                                       size=new_size)
+
+    def duplicate(self):
+        """Performs a bit-for-bit copy of a disk image."""
+        rval = api_handler.linode_disk_duplicate(linodeid=self.linode.api_id, diskid=self.api_id)
+        return Disk.find(linode=self.linode.api_id, api_id=rval["DiskID"])
+
     def __repr__(self):
         return "<Disk api_id=%d, label='%s'>" % (self.api_id, self.label)
 
@@ -813,6 +825,10 @@ class LinodeTest:
         print
         disk = Disk.create(linode=linode_obj, label=disk_name, fstype="ext3", size=1000)
         print disk
+        print
+        print "~~~ Duplicating the disk '%s'" % (disk.label,)
+        print
+        print disk.duplicate()
         print
 
 

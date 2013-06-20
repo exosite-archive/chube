@@ -9,7 +9,7 @@ from .kernel import Kernel
 from .distribution import Distribution
 from .stackscript import Stackscript, StackscriptInput
 from .linode_obj import Linode, Disk, Config, IPAddress
-__version__ = "0.1.10"
+__version__ = "0.1.11"
 
 def load_chube_config():
     """Loads the Chube config from ~/.chube."""
