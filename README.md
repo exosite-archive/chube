@@ -171,6 +171,6 @@ Continuing the last example,
 ```
 
 
-[linode-api][https://www.linode.com/api/]
-[tjfontaines][https://github.com/tjfontaine/linode-python]
-[linode-mgr][https://manager.linode.com]
+[linode-api]: [https://www.linode.com/api/]
+[tjfontaines]: [https://github.com/tjfontaine/linode-python]
+[linode-mgr]: [https://manager.linode.com]
