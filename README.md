@@ -4,7 +4,7 @@ Chube: Object-oriented bindings for the Linode API
 Chube is a Python library providing an object-oriented interface to the
 [Linode API][linode-api], built on top of [linode-python][tjfontaines].
 It's very easy to use. But don't take my word for it; check out some
-[examples][#examples]!
+[examples](#examples)!
 
 So far, Chube only supports the **Linode**, **StackScript**, and
 **Utility** sections of the API spec. But **DNS** is on its way, and
@@ -44,9 +44,9 @@ Chube can be used either interactively or as a library.
 Chube is distributed with an executable script called `chuber.py`, which
 just drops you into a Python interpreter with an API connection ready to
 go. It requires that you've created the file `~/.chube` as described in
-the [Installation][#installation] section.
+the [Installation](#installation) section.
 
-`chuber.py` should be in your `PATH`; look at the [Examples][#examples]
+`chuber.py` should be in your `PATH`; look at the [Examples](#examples)
 section to see how to use it.
 
 ### Library
