@@ -857,7 +857,7 @@ class LinodeTest:
         ss_input = StackscriptInput(blah="foo")
         disk = Disk.create(linode=linode_obj, stackscript=stackscript,
                            ss_input=ss_input, distribution=distro,
-                           label=stackscript_name, size=1000, root_pass="czGgsxCvFHkR")
+                           label=disk_name, size=1000, root_pass="czGgsxCvFHkR")
         print disk
         print
         stackscript.destroy()
