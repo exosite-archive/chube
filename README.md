@@ -170,7 +170,6 @@ Continuing the last example,
                        root_pass="god")
 ```
 
-
-[linode-api]: [https://www.linode.com/api/]
-[tjfontaines]: [https://github.com/tjfontaine/linode-python]
-[linode-mgr]: [https://manager.linode.com]
+[linode-api]: https://www.linode.com/api/
+[tjfontaines]: https://github.com/tjfontaine/linode-python
+[linode-mgr]: https://manager.linode.com
