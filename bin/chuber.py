@@ -20,6 +20,7 @@ if __name__ == "__main__":
                "Kernel": "kernel",
                "Distribution": "distribution",
                "Linode": "linode_obj",
+               "Domain": "dns",
                "Stackscript": "stackscript"}[class_under_test]
         test_suite = getattr(__import__("chube." + mod,
                                         fromlist=[True]),
