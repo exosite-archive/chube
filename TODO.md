@@ -1,8 +1,6 @@
 DNS
 -----
 
-* `domain.update`
-
 * `domain.resource.create`
 * `domain.resource.delete`
 * `domain.resource.list`

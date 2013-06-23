@@ -34,26 +34,30 @@ class Domain(Model):
 
     # The `master_ips` attribute is based on `master_ips_str`
     def master_ips_getter(self):
-        """Returns the zone's master DNS servers, as an array of IP addresses."""
-        ips = self.master_ips_str.split(",")
+        """Returns the zone's master DNS servers, as an array of IP addresses.
+        
+           The string given by the API is something like "127.0.0.1;127.0.0.2;". """
+        ips = self.master_ips_str.rstrip(";").split(";")
         return ips
     def master_ips_setter(self, val):
         """Sets the zone's master DNS servers.
 
            `val`: A list of IP address strings."""
-        self.master_ips_str = ",".join(val)
+        self.master_ips_str = ";".join(val) + ";"
     master_ips = property(master_ips_getter, master_ips_setter)
 
     # The `axfr_ips` attribute is based on `axfr_ips_str`
     def axfr_ips_getter(self):
-        """Returns the IP addresses allowed to AXFR the zone, as an array of strings."""
-        ips = self.axfr_ips_str.split(",")
+        """Returns the IP addresses allowed to AXFR the zone, as an array of strings.
+        
+           The string given by the API is something like "127.0.0.1;127.0.0.2;" """
+        ips = self.axfr_ips_str.rstrip(";").split(";")
         return ips
     def axfr_ips_setter(self, val):
         """Sets the IP addresses allowed to AXFR the zone.
 
            `val`: A list of IP address strings."""
-        self.axfr_ips_str = ",".join(val)
+        self.axfr_ips_str = ";".join(val) + ";"
     axfr_ips = property(axfr_ips_getter, axfr_ips_setter)
 
     @classmethod
@@ -117,7 +121,7 @@ class Domain(Model):
         attrs = [attr for attr in self.direct_attrs if attr.is_savable()]
         for attr in attrs:
             api_params[attr.update_as] = attr.api_type(getattr(self, attr.local_name))
-        api_handler.linode_update(**api_params)
+        api_handler.domain_update(**api_params)
 
     def refresh(self):
         """Refreshes the Domain object with a new API call."""
@@ -132,70 +136,6 @@ class Domain(Model):
 
     def __repr__(self):
         return "<Domain api_id=%d, domain='%s'>" % (self.api_id, self.domain)
-
-    def add_private_ip(self):
-        """Adds a private IP address to the Domain and returns it."""
-        rval = api_handler.linode_ip_addprivate(linodeid=self.api_id)
-        return IPAddress.find(linode=self.api_id, api_id=rval["IPAddressID"])
-
-    def create_disk(self, **kwargs):
-        """Adds a disk. See `help(Disk.create)` for more info."""
-        return Disk.create(linode=self.api_id, **kwargs)
-
-    def boot(self, **kwargs):
-        """Boots the Domain.
- 
-           `config` (optional): A Config object or a numerical Config ID."""
-        api_args = {"linodeid": self.api_id}
-        if kwargs.has_key("config"):
-            if type(kwargs["config"]) is not int:
-                api_args["configid"] = kwargs["config"].api_id
-            else:
-                api_args["configid"] = kwargs["config"]
-        rval = api_handler.linode_boot(**api_args)
-        return Job.find(linode=self.api_id, api_id=rval["JobID"], include_finished=True)
-
-    def reboot(self, **kwargs):
-        """Reboots the Domain.
-        
-           `config` (optional): A Config object or a numerical Config ID."""
-        api_args = {"linodeid": self.api_id}
-        if kwargs.has_key("config"):
-            if type(kwargs["config"]) is not int:
-                api_args["configid"] = kwargs["config"].api_id
-            else:
-                api_args["configid"] = kwargs["config"]
-        rval = api_handler.linode_reboot(**api_args)
-        return Job.find(linode=self.api_id, api_id=rval["JobID"], include_finished=True)
-
-    def shutdown(self, **kwargs):
-        """Shuts down the Domain."""
-        rval = api_handler.linode_shutdown(linodeid=self.api_id)
-        return Job.find(linode=self.api_id, api_id=rval["JobID"], include_finished=True)
-
-    @RequiresParams("plan", "datacenter", "payment_term")
-    def clone(self, **kwargs):
-        """Clones a Domain and gives you full privileges to it.
-
-           `plan` (required): Can be a Plan object or a numeric plan ID.
-           `datacenter` (required): Can be a Datacenter object or a numeric datacenter ID.
-           `payment_term` (required): An integer number of months that represents a valid
-               Domain payment term (1, 12, or 24 at the time of this writing)."""
-        plan, datacenter, payment_term = (kwargs["plan"], kwargs["datacenter"],
-                                          kwargs["payment_term"])
-        if type(plan) is not int: plan = plan.api_id
-        if type(datacenter) is not int: datacenter = datacenter.api_id
-        rval = api_handler.linode_clone(linodeid=self.api_id, planid=plan, datacenterid=datacenter, paymentterm=payment_term)
-        return Domain.find(api_id=rval["DomainID"])
-
-    @RequiresParams("plan")
-    def resize(self, **kwargs):
-        """Moves a Domain to a new server on a different Plan.
-
-           `plan` (required): Can be a Plan object or a numeric plan ID."""
-        plan = kwargs["plan"]
-        if type(plan) is not int: plan = plan.api_id
-        api_handler.linode_resize(linodeid=self.api_id, planid=plan)
 
 
 class DomainTest:
@@ -216,6 +156,22 @@ class DomainTest:
         print
         print "domain = %s" % (domain.domain,)
         print "ttl_sec = %s" % (domain.ttl_sec,)
+        print
+
+        print "~~~ Setting domain's TTL and axfr_ips"
+        print
+        domain.ttl_sec = 300
+        domain.axfr_ips = ["127.0.0.1", "127.0.0.2"]
+        print "~~~ Saving change"
+        print
+        domain.save()
+        print "~~~ Refreshing domain from API"
+        print
+        domain.refresh()
+        print domain
+        print "ttl_sec = %d" % (domain.ttl_sec,)
+        print "axfr_ips = %s" % (repr(domain.axfr_ips),)
+        assert domain.axfr_ips_str in ["127.0.0.1;127.0.0.2;", "127.0.0.2;127.0.0.1;"]
 
         print
         print "~~~ Searching for domains"
@@ -236,3 +192,5 @@ class DomainTest:
         print "~~~ Destroying domain '%s'" % (domain.domain,)
         print
         domain.destroy()
+
+        print "~~~ Tests passed!"
