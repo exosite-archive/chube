@@ -1,10 +1,12 @@
 DNS
 -----
 
-* `domain.resource.create`
-* `domain.resource.delete`
-* `domain.resource.list`
 * `domain.resource.update`
+
+Linode
+-----
+
+* `linode.config.delete`
 
 Nodebalacer
 -----

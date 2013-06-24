@@ -115,6 +115,28 @@ class Domain(Model):
         new_domain_id = rval[u"DomainID"]
         return cls.find(api_id=new_domain_id)
 
+    @RequiresParams("record_type")
+    def add_record(self, **kwargs):
+        """Adds a DNS record to the domain.
+
+           `record_type` (required): "A", "MX", "CNAME", etc.
+           `name` (optional): The left-hand side of the DNS record.
+           `target` (optional): The right-hand side of the DNS record."""
+        api_args = {"domainid": self.api_id}
+        api_args["type"] = kwargs["record_type"]
+        if kwargs.has_key("name"): api_args["name"] = kwargs["name"]
+        if kwargs.has_key("target"): api_args["target"] = kwargs["target"]
+        rval = api_handler.domain_resource_create(**api_args)
+        return Record.find(domain=self.api_id, api_id=rval["ResourceID"])
+
+    def search_records(self, **kwargs):
+        """Returns the list of Record instances that match the given criteria."""
+        a = [api_dict for api_dict in api_handler.domain_resource_list(domainid=self.api_id)]
+        a = [Record.find(domain=self.api_id, api_id=api_dict["RESOURCEID"]) for api_dict in a]
+        for k, v in kwargs.items():
+            a = [record for record in a if getattr(addr, k) == v]
+        return a
+
     def save(self):
         """Saves the Domain object to the API."""
         api_params = {}
@@ -136,6 +158,94 @@ class Domain(Model):
 
     def __repr__(self):
         return "<Domain api_id=%d, domain='%s'>" % (self.api_id, self.domain)
+
+
+class Record(Model):
+    direct_attrs = [
+        # IDs
+        DirectAttr("api_id", u"RESOURCEID", int, int,
+                   update_as="resourceid"),
+        DirectAttr("domain_id", u"DOMAINID", int, int,
+                   update_as="domainid"),
+
+        # Properties
+        DirectAttr("record_type", u"TYPE", unicode, unicode,
+                   update_as="type"),
+        DirectAttr("name", u"NAME", unicode, unicode,
+                   update_as="name"),
+        DirectAttr("target", u"TARGET", unicode, unicode,
+                   update_as="target"),
+        DirectAttr("priority", u"PRIORITY", int, int,
+                   update_as="priority"),
+        DirectAttr("weight", u"WEIGHT", int, int,
+                   update_as="weight"),
+        DirectAttr("port", u"PORT", int, int,
+                   update_as="protocol"),
+        DirectAttr("ttl_sec", u"TTL_SEC", int, int,
+                   update_as="ttl_sec"),
+    ]
+
+    # The `domain` attribute is done with a deferred lookup.
+    def domain_getter(self):
+        return Domain.find(api_id=self.domain_id)
+    def domain_setter(self, val):
+        raise NotImplementedError("Cannot assign Record to a different Domain")
+    domain = property(domain_getter, domain_setter)
+
+    @classmethod
+    def create(cls, **kwargs):
+        """DNS records can't be created directly. Use `Linode.add_record()` instead."""
+        raise NotImplementedError(cls.__doc__)
+
+    @classmethod
+    @RequiresParams("domain")
+    def search(cls, **kwargs):
+        """Returns the list of Record instances that match the given criteria.
+        
+           At least `domain` is required. It can be a Domain object or a numeric Domain ID."""
+        domain = kwargs["domain"]
+        if type(domain) is not int: domain = domain.api_id
+        a = [cls.from_api_dict(d) for d in api_handler.domain_resource_list(domainid=domain)]
+        del kwargs["domain"]
+
+        for k, v in kwargs.items():
+            a = [addr for addr in a if getattr(addr, k) == v]
+        return a
+
+    @classmethod
+    @RequiresParams("domain")
+    def find(cls, **kwargs):
+        """Returns a single Record instance that matches the given criteria.
+
+           For example, `Record.find(api_id=82061, domain=9201)`.
+
+           Both parameters are required. `domain` may be a Domain ID or a Domain object."""
+        a = cls.search(**kwargs)
+        if len(a) < 1: raise RuntimeError("No Domain found with the given criteria (%s)" % (kwargs,))
+        if len(a) > 1: raise RuntimeError("More than one Domain found with the given criteria (%s)" % (kwargs,))
+        return a[0]
+
+    def save(self):
+        """Saves the Record object to the API."""
+        api_params = {}
+        attrs = [attr for attr in self.direct_attrs if attr.is_savable()]
+        for attr in attrs:
+            api_params[attr.update_as] = attr.api_type(getattr(self, attr.local_name))
+        api_handler.domain_resource_update(**api_params)
+
+    def refresh(self):
+        """Refreshes the Record object with a new API call."""
+        new_inst = Record.find(api_id=self.api_id, domain=self.domain_id)
+        for attr in self.direct_attrs:
+            setattr(self, attr.local_name, getattr(new_inst, attr.local_name))
+        del new_inst
+
+    def destroy(self):
+        """Destroys the DNS record."""
+        api_handler.domain_resource_delete(domainid=self.domain_id, resourceid=self.api_id)
+
+    def __repr__(self):
+        return "<Record api_id=%d, record_type='%s', name='%s'>" % (self.api_id, self.record_type, self.name)
 
 
 class DomainTest:
@@ -188,6 +298,29 @@ class DomainTest:
         print rslt
         print
         assert [d for d in Domain.search() if d.api_id == domain.api_id]
+
+        print "~~~ Creating A record 'foo.%s' => 127.0.0.1" % (domain.domain,)
+        print
+        r = domain.add_record(record_type="A", name="foo", target="127.0.0.1")
+        print r
+        print
+
+        print "~~~ Creating CNAME record 'bar.%s' => 'foo.%s'" % (domain.domain,domain.domain,)
+        print
+        r = domain.add_record(record_type="CNAME", name="bar", target=("foo.%s" % (domain.domain,)))
+        print r
+        print
+
+        print "~~~ Checking domain on CNAME record '%s'" % (r.name,)
+        print
+        print r.domain
+        print
+        assert r.domain.domain == domain.domain
+
+        print "~~~ Destroying CNAME record '%s' => '%s'" % (r.name,r.target,)
+        print
+        r.destroy()
+        assert r.api_id not in [r.api_id for r in domain.search_records()]
 
         print "~~~ Destroying domain '%s'" % (domain.domain,)
         print
