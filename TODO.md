@@ -2,6 +2,7 @@ DNS
 -----
 
 * `domain.resource.update`
+* Fix `Record.from_api_dict` behavior for empty-string port/weight
 
 Linode
 -----
