@@ -643,7 +643,7 @@ class Job(Model):
         if self._duration_str == u"":
             return None
         return int(self._duration_str)
-    def duration_setter(self):
+    def duration_setter(self, val):
         raise NotImplementedError("Cannot set Job duration")
     duration = property(duration_getter, duration_setter)
 
