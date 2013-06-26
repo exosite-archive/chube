@@ -1,39 +1,25 @@
 class DirectAttr:
     """A model attribute that comes straight from the API."""
-    def __init__(self, local_name, api_name, local_type, api_type,
-                 update_as=None, update_only_if_type=None):
+    def __init__(self, local_name, api_name, local_type, api_type, update_as=None):
         """Initializes the DirectAttr instance.
 
            `local_name`: The name we'll use for the attribute locally (e.g. "label" or
                "requires_pvops")
-           `api_name`: The used in API responses for the attribute (e.g. u"LABEL" or
-               u"REQUIRESPVOPS")
+           `api_name`: The used by the API for the attribute (e.g. u"LABEL" or u"REQUIRESPVOPS")
            `local_type`: The type of object we'll use locally for the attribute (e.g. `bool` or
                `FooObject`)
            `api_type`: The type of object the API expects for the attribute (e.g. `int` or
                `unicode`)
            `update_as`: The name of the API parameter to pass this value as when updating it.
-               If `None`, then this attribute will be excluded from saves.
-           `update_only_if_type`: Only include this parameter in a `save` call if its value is
-               of the specified type. This is useful for attributes like Record.weight, where
-               the API may return `u''` if the value is undefined but we can only save integers."""
+               If `None`, then this attribute will be excluded from saves."""
         self.local_name = local_name
         self.api_name = api_name
         self.local_type = local_type
         self.api_type = api_type
         self.update_as = update_as
-        self.update_only_if_type = update_only_if_type
 
-    def __repr__(self):
-        return "<DirectAttr local_name='%s'>" % (self.local_name,)
-
-    def is_savable(self, val):
-        """Determines whether the attribute is savable in its current state.
-
-           `val`: The locally-stored value for the attribute."""
-        if self.update_as is None: return False
-        if self.update_only_if_type is not None and type(self.val) is not self.update_only_if_type: return False
-        return True
+    def is_savable(self):
+        return (self.update_as is not None)
 
 
 class Model(object):
@@ -43,7 +29,6 @@ class Model(object):
     def from_api_dict(cls, api_dict):
         """Factory method that instantiates Model subclasses from API-returned dicts."""
         inst = cls()
-
         for attr in cls.direct_attrs:
             try:
                 api_value = api_dict[attr.api_name]
@@ -51,5 +36,4 @@ class Model(object):
                 raise KeyError("API did not return required '%s' value for '%s' object" %
                                (attr.api_name, cls.__name__))
             setattr(inst, attr.local_name, attr.local_type(api_value))
-
         return inst
