@@ -131,10 +131,9 @@ class Domain(Model):
 
     def search_records(self, **kwargs):
         """Returns the list of Record instances that match the given criteria."""
-        a = [api_dict for api_dict in api_handler.domain_resource_list(domainid=self.api_id)]
-        a = [Record.find(domain=self.api_id, api_id=api_dict["RESOURCEID"]) for api_dict in a]
+        a = [Record.from_api_dict(api_dict) for api_dict in api_handler.domain_resource_list(domainid=self.api_id)]
         for k, v in kwargs.items():
-            a = [record for record in a if getattr(addr, k) == v]
+            a = [record for record in a if getattr(record, k) == v]
         return a
 
     def save(self):
@@ -175,14 +174,17 @@ class Record(Model):
                    update_as="name"),
         DirectAttr("target", u"TARGET", unicode, unicode,
                    update_as="target"),
-        DirectAttr("priority", u"PRIORITY", int, int,
-                   update_as="priority"),
-        DirectAttr("weight", u"WEIGHT", int, int,
-                   update_as="weight"),
-        DirectAttr("port", u"PORT", int, int,
-                   update_as="protocol"),
         DirectAttr("ttl_sec", u"TTL_SEC", int, int,
                    update_as="ttl_sec"),
+
+        # These can come back as either the empty string or an int, so we
+        # like to massage it as a property before giving it to the user.
+        DirectAttr("_weight_api_val", u"WEIGHT", unicode, unicode,
+                   update_as="weight", update_only_if_type=int),
+        DirectAttr("_port_api_val", u"PORT", unicode, unicode,
+                   update_as="port", update_only_if_type=int),
+        DirectAttr("_priority_api_val", u"PRIORITY", unicode, unicode,
+                   update_as="priority", update_only_if_type=int),
     ]
 
     # The `domain` attribute is done with a deferred lookup.
@@ -191,6 +193,34 @@ class Record(Model):
     def domain_setter(self, val):
         raise NotImplementedError("Cannot assign Record to a different Domain")
     domain = property(domain_getter, domain_setter)
+
+    # The `weight` attribute needs to be massaged before returning it to the
+    # user. It can come back from the API either as an empty string or an int.
+    def weight_getter(self):
+        if self._weight_api_val == u"":
+            return None
+        return int(self._weight_api_val)
+    def weight_setter(self, val):
+        self._weight_api_val = int(val)
+    weight = property(weight_getter, weight_setter)
+
+    # See the comments for the `weight` property. Same deal.
+    def port_getter(self):
+        if self._port_api_val == u"":
+            return None
+        return int(self._port_api_val)
+    def port_setter(self, val):
+        self._port_api_val = int(val)
+    port = property(port_getter, port_setter)
+
+    # See the comments for the `weight` property. Same deal.
+    def priority_getter(self):
+        if self._priority_api_val == u"":
+            return None
+        return int(self._priority_api_val)
+    def priority_setter(self, val):
+        self._priority_api_val = int(val)
+    priority = property(priority_getter, priority_setter)
 
     @classmethod
     def create(cls, **kwargs):
