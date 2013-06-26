@@ -131,10 +131,9 @@ class Domain(Model):
 
     def search_records(self, **kwargs):
         """Returns the list of Record instances that match the given criteria."""
-        a = [api_dict for api_dict in api_handler.domain_resource_list(domainid=self.api_id)]
-        a = [Record.find(domain=self.api_id, api_id=api_dict["RESOURCEID"]) for api_dict in a]
+        a = [Record.from_api_dict(api_dict) for api_dict in api_handler.domain_resource_list(domainid=self.api_id)]
         for k, v in kwargs.items():
-            a = [record for record in a if getattr(addr, k) == v]
+            a = [record for record in a if getattr(record, k) == v]
         return a
 
     def save(self):
