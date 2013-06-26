@@ -1,3 +1,8 @@
+General
+-----
+
+* Add `_` prefix to getters and setters
+
 DNS
 -----
 
