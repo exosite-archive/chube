@@ -136,6 +136,15 @@ class Domain(Model):
             a = [record for record in a if getattr(record, k) == v]
         return a
 
+    def find_record(self, **kwargs):
+        """Returns a single Record instance that matches the given criteria.
+ 
+           Raises an exception if there's not exactly one match."""
+        a = self.search_records(**kwargs)
+        if len(a) < 1: raise RuntimeError("No Record found with the given criteria (%s)" % (kwargs,))
+        if len(a) > 1: raise RuntimeError("More than one Record found with the given criteria (%s)" % (kwargs,))
+        return a[0]
+
     def save(self):
         """Saves the Domain object to the API."""
         api_params = {}
