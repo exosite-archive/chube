@@ -13,6 +13,7 @@ Linode
 -----
 
 * `linode.config.delete`
+* Make clear single-user-mode setter
 
 Nodebalacer
 -----
