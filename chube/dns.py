@@ -313,6 +313,11 @@ class DomainTest:
         print r
         print
 
+        print "~~~ Changing the target of record 'foo.%s' to 127.0.0.2" % (domain.domain,)
+        print
+        r.target = "127.0.0.2"
+        r.save()
+
         print "~~~ Creating CNAME record 'bar.%s' => 'foo.%s'" % (domain.domain,domain.domain,)
         print
         r = domain.add_record(record_type="CNAME", name="bar", target=("foo.%s" % (domain.domain,)))
