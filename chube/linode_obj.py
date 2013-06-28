@@ -175,6 +175,10 @@ class Linode(Model):
         """Adds a disk. See `help(Disk.create)` for more info."""
         return Disk.create(linode=self.api_id, **kwargs)
 
+    def is_up(self):
+        """Determines whether the instance is up."""
+        return (self.status == 1)
+
     def boot(self, **kwargs):
         """Boots the Linode.
  
