@@ -38,12 +38,14 @@ class Domain(Model):
         
            The string given by the API is something like "127.0.0.1;127.0.0.2;". """
         ips = self.master_ips_str.rstrip(";").split(";")
+        # API returns ['"none"'] or ['none'] if there are no IPs authorized.
+        if ips == [u'"none"'] or ips == [u"none"]: return []
         return ips
     def master_ips_setter(self, val):
         """Sets the zone's master DNS servers.
 
            `val`: A list of IP address strings."""
-        self.master_ips_str = ";".join(val) + ";"
+        self.master_ips_str = ";".join(val)
     master_ips = property(master_ips_getter, master_ips_setter)
 
     # The `axfr_ips` attribute is based on `axfr_ips_str`
@@ -52,12 +54,14 @@ class Domain(Model):
         
            The string given by the API is something like "127.0.0.1;127.0.0.2;" """
         ips = self.axfr_ips_str.rstrip(";").split(";")
+        # API returns ['"none"'] or ['none'] if there are no IPs authorized.
+        if ips == [u'"none"'] or ips == [u"none"]: return []
         return ips
     def axfr_ips_setter(self, val):
         """Sets the IP addresses allowed to AXFR the zone.
 
            `val`: A list of IP address strings."""
-        self.axfr_ips_str = ";".join(val) + ";"
+        self.axfr_ips_str = ";".join(val)
     axfr_ips = property(axfr_ips_getter, axfr_ips_setter)
 
     @classmethod
@@ -290,8 +294,15 @@ class DomainTest:
         print "ttl_sec = %d" % (domain.ttl_sec,)
         print "axfr_ips = %s" % (repr(domain.axfr_ips),)
         assert domain.axfr_ips_str in ["127.0.0.1;127.0.0.2;", "127.0.0.2;127.0.0.1;"]
-
         print
+        print "~~~ Removing AXFR IPs"
+        print
+        domain.axfr_ips = []
+        domain.save()
+        domain.refresh()
+        assert domain.axfr_ips_str in ["", "none", '"none"']
+
+
         print "~~~ Searching for domains"
         print
         print "~~~ By prefix"

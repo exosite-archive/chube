@@ -4,10 +4,6 @@ General
 * Add `_` prefix to getters and setters
 * Migrate to Github issue tracker
 
-DNS
------
-* BUG: Linode API returns 'none' instead of '' for axfr_ips if list is empty
-
 Linode
 -----
 
