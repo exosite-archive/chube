@@ -6,9 +6,8 @@ Chube is a Python library providing an object-oriented interface to the
 It's very easy to use. But don't take my word for it; check out some
 [examples](#examples)!
 
-So far, Chube only supports the **Linode**, **StackScript**, and
-**Utility** sections of the API spec. But **DNS** is on its way, and
-**NodeBalancer** after that.
+Chube supports the **Linode**, **StackScript**, **Utility**, and **DNS**
+sections of the API spec. But **NodeBalancer** is on its way.
 
 
 <a name="installation"></a>
@@ -107,6 +106,14 @@ To list each Linode with its public IP address,
     node.save()
 ```
 
+### Determine whether a node is running
+
+```python
+    for node in Linode.search():
+        if not node.is_up():
+            print "Node '%s' is NOT running" % (node.label,)
+```
+
 ### Add a disk to a Linode, based on a standard distribution
 
 ```python
@@ -168,6 +175,41 @@ Continuing the last example,
                        label='foo-disk',
                        size=8000,
                        root_pass="god")
+```
+
+### List the DNS records in a domain
+
+```python
+    domain = Domain.find(domain="example.com")
+    for record in domain.search_records():
+        print "%-20s => %s" % (record.name, record.target)
+```
+
+### Add a DNS record to a domain
+
+```python
+    domain = Domain.find(domain="example.com")
+    domain.add_record(record_type="A", name="localhost", target="127.0.0.1")
+```
+
+### Add an IP address to the AXFR transfer list
+
+```python
+    domain = Domain.find(domain="example.com")
+    domain.axfr_ips.append("127.0.0.1")
+```
+
+### Change a DNS record's TTL
+
+```python
+    record.ttl_sec = 600
+    record.save()
+```
+
+### Delete a DNS record
+
+```python
+    record.destroy()
 ```
 
 [linode-api]: https://www.linode.com/api/
