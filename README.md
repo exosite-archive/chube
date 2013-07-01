@@ -190,7 +190,8 @@ Continuing the last example,
 ```python
     domain = Domain.find(domain="example.com")
     domain.add_record(record_type="A", name="localhost", target="127.0.0.1")
-    domain.add_record(record_type="MX", name="", target="mail.example.com", priority=10)
+    domain.add_record(record_type="MX", name="", target="mail.example.com",
+                      priority=10)
 ```
 
 ### Add an IP address to the AXFR transfer list
