@@ -10,7 +10,7 @@ from .distribution import Distribution
 from .stackscript import Stackscript, StackscriptInput
 from .linode_obj import Linode, Disk, Config, IPAddress
 from .dns import Domain
-__version__ = "0.1.12"
+__version__ = "0.1.13"
 
 def load_chube_config():
     """Loads the Chube config from ~/.chube."""
