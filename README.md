@@ -185,11 +185,12 @@ Continuing the last example,
         print "%-20s => %s" % (record.name, record.target)
 ```
 
-### Add a DNS record to a domain
+### Add DNS records to a domain
 
 ```python
     domain = Domain.find(domain="example.com")
     domain.add_record(record_type="A", name="localhost", target="127.0.0.1")
+    domain.add_record(record_type="MX", name="", target="mail.example.com", priority=10)
 ```
 
 ### Add an IP address to the AXFR transfer list
@@ -209,6 +210,8 @@ Continuing the last example,
 ### Delete a DNS record
 
 ```python
+    domain = Domain.find(domain="example.com")
+    record = domain.find_record(name="mail")
     record.destroy()
 ```
 
