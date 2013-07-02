@@ -6,7 +6,7 @@ setup(
         author='Exosite',
         author_email='danslimmon@exosite.com',
         packages=['chube'],
-        scripts=['bin/chuber.py'],
+        scripts=['bin/chuber'],
         url='http://pypi.python.org/pypi/chube/',
         license='LICENSE.txt',
         description='Object-oriented bindings for the Linode API',

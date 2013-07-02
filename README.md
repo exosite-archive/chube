@@ -38,14 +38,14 @@ Usage
 
 Chube can be used either interactively or as a library.
 
-### Interactive use: chuber.py
+### Interactive use: chuber
 
-Chube is distributed with an executable script called `chuber.py`, which
+Chube is distributed with an executable script called `chuber`, which
 just drops you into a Python interpreter with an API connection ready to
 go. It requires that you've created the file `~/.chube` as described in
 the [Installation](#installation) section.
 
-`chuber.py` should be in your `PATH`; look at the [Examples](#examples)
+`chuber` should be in your `PATH`; look at the [Examples](#examples)
 section to see how to use it.
 
 ### Library
