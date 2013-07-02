@@ -435,6 +435,10 @@ class Config(Model):
             setattr(self, attr.local_name, getattr(new_inst, attr.local_name))
         del new_inst
 
+    def destroy(self):
+        """Deletes the Config object."""
+        api_handler.linode_config_delete(linodeid=self.linode.api_id, configid=self.api_id)
+
     def __repr__(self):
         return "<Config api_id=%d, label='%s'>" % (self.api_id, self.label)
 
@@ -946,6 +950,9 @@ class LinodeTest:
         print
         job = linode_a.shutdown()
 
+        print "~~~ Deleting Config '%s'" % (config.label,)
+        print
+        config.destroy()
  
         print "~~~ Deleting Linode '%s'" % (linode_a.label,)
         print
