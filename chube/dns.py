@@ -33,7 +33,7 @@ class Domain(Model):
     ]
 
     # The `master_ips` attribute is based on `master_ips_str`
-    def master_ips_getter(self):
+    def _master_ips_getter(self):
         """Returns the zone's master DNS servers, as an array of IP addresses.
         
            The string given by the API is something like "127.0.0.1;127.0.0.2;". """
@@ -41,15 +41,15 @@ class Domain(Model):
         # API returns ['"none"'] or ['none'] if there are no IPs authorized.
         if ips == [u'"none"'] or ips == [u"none"]: return []
         return ips
-    def master_ips_setter(self, val):
+    def _master_ips_setter(self, val):
         """Sets the zone's master DNS servers.
 
            `val`: A list of IP address strings."""
         self.master_ips_str = ";".join(val)
-    master_ips = property(master_ips_getter, master_ips_setter)
+    master_ips = property(_master_ips_getter, _master_ips_setter)
 
     # The `axfr_ips` attribute is based on `axfr_ips_str`
-    def axfr_ips_getter(self):
+    def _axfr_ips_getter(self):
         """Returns the IP addresses allowed to AXFR the zone, as an array of strings.
         
            The string given by the API is something like "127.0.0.1;127.0.0.2;" """
@@ -57,12 +57,12 @@ class Domain(Model):
         # API returns ['"none"'] or ['none'] if there are no IPs authorized.
         if ips == [u'"none"'] or ips == [u"none"]: return []
         return ips
-    def axfr_ips_setter(self, val):
+    def _axfr_ips_setter(self, val):
         """Sets the IP addresses allowed to AXFR the zone.
 
            `val`: A list of IP address strings."""
         self.axfr_ips_str = ";".join(val)
-    axfr_ips = property(axfr_ips_getter, axfr_ips_setter)
+    axfr_ips = property(_axfr_ips_getter, _axfr_ips_setter)
 
     @classmethod
     def search(cls, **kwargs):
@@ -198,11 +198,11 @@ class Record(Model):
     ]
 
     # The `domain` attribute is done with a deferred lookup.
-    def domain_getter(self):
+    def _domain_getter(self):
         return Domain.find(api_id=self.domain_id)
-    def domain_setter(self, val):
+    def _domain_setter(self, val):
         raise NotImplementedError("Cannot assign Record to a different Domain")
-    domain = property(domain_getter, domain_setter)
+    domain = property(_domain_getter, _domain_setter)
 
     @classmethod
     def create(cls, **kwargs):

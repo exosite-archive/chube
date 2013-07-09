@@ -52,13 +52,13 @@ class Stackscript(Model):
     ]
 
     # The `distributions` attribute is based on `distribution_id_list`
-    def distributions_getter(self):
+    def _distributions_getter(self):
         """Returns the list of distributions associated with the Stackscript."""
         distributions = []
         for distribution_id in self.distribution_id_list.split(","):
             distributions.append(Distribution.find(linode=self.linode_id, api_id=int(distribution_id)))
         return distributions
-    def distributions_setter(self, val):
+    def _distributions_setter(self, val):
         """Updates the list of distributions associated with the configuration.
 
            `val`: An 8-element list of Distribution objects."""
@@ -66,7 +66,7 @@ class Stackscript(Model):
         for distribution in val:
             distribution_ids.append(distribution.api_id)
         self.distribution_id_list = ",".join(map(str, distribution_ids))
-    distributions = property(distributions_getter, distributions_setter)
+    distributions = property(_distributions_getter, _distributions_setter)
 
     @classmethod
     def search(cls, **kwargs):

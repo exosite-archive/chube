@@ -58,46 +58,46 @@ class Linode(Model):
     ]
 
     # The `datacenter` attribute is done with a deferred lookup.
-    def datacenter_getter(self):
+    def _datacenter_getter(self):
         return Datacenter.find(api_id=self.datacenter_id)
-    def datacenter_setter(self, val):
+    def _datacenter_setter(self, val):
         raise NotImplementedError("You can't just go around changing the `datacenter` property. Who do you think you are?")
-    datacenter = property(datacenter_getter, datacenter_setter)
+    datacenter = property(_datacenter_getter, _datacenter_setter)
 
     # The `ipaddresses` attribute
-    def ipaddresses_getter(self):
+    def _ipaddresses_getter(self):
         return IPAddress.search(linode=self.api_id)
-    def ipaddresses_setter(self, val):
+    def _ipaddresses_setter(self, val):
         raise NotImplementedError("Cannot set `ipaddresses` directly; use `add_private_ip` instead.")
-    ipaddresses = property(ipaddresses_getter, ipaddresses_setter)
+    ipaddresses = property(_ipaddresses_getter, _ipaddresses_setter)
 
     # The `configs` attribute
-    def configs_getter(self):
+    def _configs_getter(self):
         return Config.search(linode=self.api_id)
-    def configs_setter(self, val):
+    def _configs_setter(self, val):
         raise NotImplementedError("Cannot set `configs` directly; use `add_config` instead.")
-    configs = property(configs_getter, configs_setter)
+    configs = property(_configs_getter, _configs_setter)
 
     # The `configs` attribute
-    def disks_getter(self):
+    def _disks_getter(self):
         return Disk.search(linode=self.api_id)
-    def disks_setter(self, val):
+    def _disks_setter(self, val):
         raise NotImplementedError("Cannot set `disks` directly; use `create_disk` instead.")
-    disks = property(disks_getter, disks_setter)
+    disks = property(_disks_getter, _disks_setter)
 
     # The `all_jobs` attribute
-    def all_jobs_getter(self):
+    def _all_jobs_getter(self):
         return Job.search(linode=self.api_id, include_finished=True)
-    def all_jobs_setter(self, val):
+    def _all_jobs_setter(self, val):
         raise NotImplementedError("Cannot set `all_jobs` attribute.")
-    all_jobs = property(all_jobs_getter, all_jobs_setter)
+    all_jobs = property(_all_jobs_getter, _all_jobs_setter)
 
     # The `pending_jobs` attribute
-    def pending_jobs_getter(self):
+    def _pending_jobs_getter(self):
         return Job.search(linode=self.api_id, include_finished=False)
-    def pending_jobs_setter(self, val):
+    def _pending_jobs_setter(self, val):
         raise NotImplementedError("Cannot set `pending_jobs` attribute.")
-    pending_jobs = property(pending_jobs_getter, pending_jobs_setter)
+    pending_jobs = property(_pending_jobs_getter, _pending_jobs_setter)
 
     @classmethod
     def search(cls, **kwargs):
@@ -248,11 +248,11 @@ class IPAddress(Model):
     ]
 
     # The `linode` attribute is done with a deferred lookup.
-    def linode_getter(self):
+    def _linode_getter(self):
         return Linode.find(api_id=self.linode_id)
-    def linode_setter(self, val):
+    def _linode_setter(self, val):
         raise NotImplementedError("Cannot assign IP address to a different Linode")
-    linode = property(linode_getter, linode_setter)
+    linode = property(_linode_getter, _linode_setter)
 
     @classmethod
     @RequiresParams("linode")
@@ -333,14 +333,14 @@ class Config(Model):
     ]
 
     # The `linode` attribute is done with a deferred lookup.
-    def linode_getter(self):
+    def _linode_getter(self):
         return Linode.find(api_id=self.linode_id)
-    def linode_setter(self, val):
+    def _linode_setter(self, val):
         raise NotImplementedError("Cannot assign Config to a different Linode")
-    linode = property(linode_getter, linode_setter)
+    linode = property(_linode_getter, _linode_setter)
 
     # The `disks` attribute is based on `disk_list`
-    def disks_getter(self):
+    def _disks_getter(self):
         """Returns the list of disks associated with the configuration.
 
            If any slot is empty, `None` will be returned in that slot."""
@@ -349,7 +349,7 @@ class Config(Model):
             if disk_id == "": disks.append(None)
             else: disks.append(Disk.find(linode=self.linode_id, api_id=int(disk_id)))
         return disks
-    def disks_setter(self, val):
+    def _disks_setter(self, val):
         """Updates the list of disks associated with the configuration.
 
            `val`: An 8-element list of Disk objects and None objects."""
@@ -362,7 +362,7 @@ class Config(Model):
         if len(disk_ids) != 9:
             raise "A Config must have exactly 9 disks. Use `None` for empty slots."
         self.disk_list = ",".join(map(str, disk_ids))
-    disks = property(disks_getter, disks_setter)
+    disks = property(_disks_getter, _disks_setter)
 
     @classmethod
     @RequiresParams("linode", "kernel", "label", "disks")
@@ -464,11 +464,11 @@ class Disk(Model):
     ]
 
     # The `linode` attribute is done with a deferred lookup.
-    def linode_getter(self):
+    def _linode_getter(self):
         return Linode.find(api_id=self.linode_id)
-    def linode_setter(self, val):
+    def _linode_setter(self, val):
         raise NotImplementedError("Cannot assign Disk to a different Linode")
-    linode = property(linode_getter, linode_setter)
+    linode = property(_linode_getter, _linode_setter)
 
     @classmethod
     @RequiresParams("linode")
@@ -639,21 +639,21 @@ class Job(Model):
     ]
 
     # The `linode` attribute is done with a deferred lookup.
-    def linode_getter(self):
+    def _linode_getter(self):
         return Linode.find(api_id=self.linode_id)
-    def linode_setter(self, val):
+    def _linode_setter(self, val):
         raise NotImplementedError("Cannot assign Job to a different Linode")
-    linode = property(linode_getter, linode_setter)
+    linode = property(_linode_getter, _linode_setter)
 
     # The `duration` attribute needs to be massaged before returning it to the
     # user. If the job isn't finished yet, we'll return `None`.
-    def duration_getter(self):
+    def _duration_getter(self):
         if self._duration_str == u"":
             return None
         return int(self._duration_str)
-    def duration_setter(self, val):
+    def _duration_setter(self, val):
         raise NotImplementedError("Cannot set Job duration")
-    duration = property(duration_getter, duration_setter)
+    duration = property(_duration_getter, _duration_setter)
 
     # The `host_success` attribute doesn't fit neatly into a type, so we provide
     # these convenience methods.
