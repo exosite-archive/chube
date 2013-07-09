@@ -1,7 +1,6 @@
 General
 -----
 
-* Add `_` prefix to getters and setters
 * Migrate to Github issue tracker
 
 Linode
