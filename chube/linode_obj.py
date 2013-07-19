@@ -11,6 +11,17 @@ from .datacenter import Datacenter
 
 
 class Linode(Model):
+    """Linode API object."""
+
+    # Macros for the values of `status`
+    STATUS_BOOTFAILED = -2
+    STATUS_CREATING = -1
+    STATUS_BRANDNEW = 0
+    STATUS_RUNNING = 1
+    STATUS_OFF = 2
+    STATUS_SHUTTINGDOWN = 3
+    STATUS_SAVED = 4
+
     direct_attrs = [
         # IDs
         DirectAttr("api_id", u"LINODEID", int, int,
@@ -174,7 +185,7 @@ class Linode(Model):
 
     def is_up(self):
         """Determines whether the instance is up."""
-        return (self.status == 1)
+        return (self.status == Linode.STATUS_RUNNING or self.status == Linode.STATUS_BRANDNEW)
 
     def boot(self, **kwargs):
         """Boots the Linode.
