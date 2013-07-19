@@ -141,6 +141,16 @@ Continuing the last example,
     job = node.boot(config=config)
 ```
 
+### Reboot a Linode in single-user mode
+
+```python
+    config = node.config[0]
+    # For `init=/bin/bash` you'd use "binbash" instead of "single"
+    config.run_level = "single"
+    config.save()
+    node.reboot()
+```
+
 ### Wait for a job to finish
 
 Continuing the last example,
