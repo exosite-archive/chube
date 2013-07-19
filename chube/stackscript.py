@@ -128,10 +128,7 @@ class Stackscript(Model):
 
     def save(self):
         """Saves the Stackscript object to the API."""
-        api_params = {}
-        attrs = [attr for attr in self.direct_attrs if attr.is_savable()]
-        for attr in attrs:
-            api_params[attr.update_as] = attr.api_type(getattr(self, attr.local_name))
+        api_params = self.api_update_params()
         api_handler.stackscript_update(**api_params)
 
     def refresh(self):

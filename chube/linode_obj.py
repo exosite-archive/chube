@@ -146,10 +146,7 @@ class Linode(Model):
 
     def save(self):
         """Saves the Linode object to the API."""
-        api_params = {}
-        attrs = [attr for attr in self.direct_attrs if attr.is_savable()]
-        for attr in attrs:
-            api_params[attr.update_as] = attr.api_type(getattr(self, attr.local_name))
+        api_params = self.api_update_params()
         api_handler.linode_update(**api_params)
 
     def refresh(self):
@@ -422,10 +419,7 @@ class Config(Model):
 
     def save(self):
         """Saves the Config object to the API."""
-        api_params = {}
-        attrs = [attr for attr in self.direct_attrs if attr.is_savable()]
-        for attr in attrs:
-            api_params[attr.update_as] = attr.api_type(getattr(self, attr.local_name))
+        api_params = self.api_update_params()
         api_handler.linode_config_update(**api_params)
 
     def refresh(self):
@@ -583,10 +577,7 @@ class Disk(Model):
 
     def save(self):
         """Saves the Disk object to the API."""
-        api_params = {}
-        attrs = [attr for attr in self.direct_attrs if attr.is_savable()]
-        for attr in attrs:
-            api_params[attr.update_as] = attr.api_type(getattr(self, attr.local_name))
+        api_params = self.api_update_params()
         api_handler.linode_disk_update(**api_params)
 
     def refresh(self):
