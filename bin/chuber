@@ -11,7 +11,16 @@ load_chube_config()
 
 
 if __name__ == "__main__":
-    if len(sys.argv) > 1:
+    if "--help" in sys.argv or "-h" in sys.argv:
+        print "USAGE: chuber"
+        print "   OR: chuber [-V|--version]"
+        sys.exit(0)
+
+    if "--version" in sys.argv or "-V" in sys.argv:
+        print CHUBE_VERSION
+        sys.exit(0)
+
+    if len(sys.argv) > 1 and sys.argv[1] == "test":
         # If you run `chube test Plan`, for example, we will import `plan.PlanTest`
         # and execute its `run()` method.
         class_under_test = sys.argv[-1]

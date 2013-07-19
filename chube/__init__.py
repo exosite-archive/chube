@@ -11,7 +11,7 @@ from .stackscript import Stackscript, StackscriptInput
 from .linode_obj import Linode, Disk, Config, IPAddress
 from .nodebalancer import Nodebalancer
 from .dns import Domain
-__version__ = "0.1.15"
+CHUBE_VERSION = "0.1.15"
 
 def load_chube_config():
     """Loads the Chube config from ~/.chube."""
