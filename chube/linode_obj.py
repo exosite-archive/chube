@@ -185,7 +185,7 @@ class Linode(Model):
 
     def is_up(self):
         """Determines whether the instance is up."""
-        return (self.status == Linode.STATUS_RUNNING or self.status == Linode.STATUS_BRANDNEW)
+        return self.status == Linode.STATUS_RUNNING
 
     def boot(self, **kwargs):
         """Boots the Linode.
