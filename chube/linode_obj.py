@@ -412,7 +412,7 @@ class Config(Model):
         del kwargs["linode"]
 
         for k, v in kwargs.items():
-            a = [addr for addr in a if getattr(addr, k) == v]
+            a = [conf for conf in a if getattr(conf, k) == v]
         return a
 
     @classmethod
