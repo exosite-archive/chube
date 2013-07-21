@@ -9,7 +9,7 @@ from .kernel import Kernel
 from .distribution import Distribution
 from .stackscript import Stackscript, StackscriptInput
 from .linode_obj import Linode, Disk, Config, IPAddress
-from .nodebalancer import Nodebalancer
+from .nodebalancer import Nodebalancer, NodebalancerConfig
 from .dns import Domain
 CHUBE_VERSION = "0.1.16"
 
