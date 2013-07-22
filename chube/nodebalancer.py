@@ -127,11 +127,10 @@ class NodebalancerConfig(Model):
     def create(cls, **kwargs):
         """Creates a new NodebalancerConfig.
 
-           `nodebalancer`: Either a Nodebalancer object or a numeric Linode ID."""
+           `nodebalancer`: Either a Nodebalancer object or a numeric Nodebalancer ID."""
         nodebalancer = kwargs["nodebalancer"]
         if type(nodebalancer) is not int: nodebalancer = nodebalancer.api_id
         rval = api_handler.nodebalancer_config_create(nodebalancerid=nodebalancer)
-        print rval
         new_config_id = rval[u"ConfigID"]
         return cls.find(api_id=new_config_id, nodebalancer=nodebalancer)
 
@@ -182,6 +181,103 @@ class NodebalancerConfig(Model):
 
     def __repr__(self):
         return "<NodebalancerConfig api_id=%d, protocol='%s', port='%s'>" % (self.api_id, self.protocol, self.port)
+
+
+class NodebalancerNode(Model):
+    direct_attrs = [
+        # IDs
+        DirectAttr("api_id", u"NODEID", int, int,
+                   update_as="nodeid"),
+        DirectAttr("config_id", u"CONFIGID", int, int),
+        DirectAttr("nodebalancer_id", u"NODEBALANCERID", int, int),
+
+        # Properties
+        DirectAttr("weight", u"WEIGHT", int, int,
+                   update_as="weight"),
+        DirectAttr("address", u"ADDRESS", unicode, unicode,
+                   update_as="address"),
+        DirectAttr("label", u"LABEL", unicode, unicode,
+                   update_as="label"),
+        DirectAttr("mode", u"MODE", unicode, unicode,
+                   update_as="mode"),
+        DirectAttr("status", u"STATUS", unicode, unicode)
+    ]
+
+    # The `config` attribute is done with a deferred lookup.
+    def _config_getter(self):
+        return NodebalancerConfig.find(api_id=self.config_id)
+    def _config_setter(self, val):
+        raise NotImplementedError("Cannot assign NodebalancerNode to a different NodebalancerConfig")
+    config = property(_config_getter, _config_setter)
+
+    # The `nodebalancer` attribute is done with a deferred lookup.
+    def _nodebalancer_getter(self):
+        return Nodebalancer.find(api_id=self.nodebalancer_id)
+    def _nodebalancer_setter(self, val):
+        raise NotImplementedError("Cannot assign NodebalancerNode to a different Nodebalancer")
+    nodebalancer = property(_nodebalancer_getter, _nodebalancer_setter)
+
+    @classmethod
+    @RequiresParams("config", "label", "address")
+    def create(cls, **kwargs):
+        """Creates a new NodebalancerNode.
+
+           `config` (required): Either a NodebalancerConfig object or a numeric Config ID.
+           `label` (required): A label for the new NodebalancerNode.
+           `address` (required): The address:port combination for communication with the node."""
+        config, label, address = kwargs["config"], kwargs["label"], kwargs["address"]
+        if type(config) is not int: config = config.api_id
+        rval = api_handler.nodebalancer_node_create(configid=config, label=label, address=address)
+        new_node_id = rval[u"NodeID"]
+        return cls.find(api_id=new_node_id, config=config)
+
+    @classmethod
+    @RequiresParams("config")
+    def search(cls, **kwargs):
+        """Returns the list of NodebalancerNode instances that match the given criteria.
+        
+           At least `config` is required. It can be a NodebalancerCOnfig object or a numeric
+           Config ID."""
+        config = kwargs["config"]
+        if type(config) is not int: config = config.api_id
+        a = [cls.from_api_dict(d) for d in api_handler.nodebalancer_node_list(configid=config)]
+        del kwargs["config"]
+
+        for k, v in kwargs.items():
+            a = [conf for conf in a if getattr(conf, k) == v]
+        return a
+
+    @classmethod
+    @RequiresParams("config")
+    def find(cls, **kwargs):
+        """Returns a single NodebalancerNode instance that matches the given criteria.
+
+           For example, `NodebalancerNode.find(config=819201, label='fhwgwhgds')`.
+
+           `config` (required) may be a Config ID or a Config object."""
+        a = cls.search(**kwargs)
+        if len(a) < 1: raise RuntimeError("No NodeBalancerNode found with the given criteria (%s)" % (kwargs,))
+        if len(a) > 1: raise RuntimeError("More than one NodeBalancerNode found with the given criteria (%s)" % (kwargs,))
+        return a[0]
+
+    def save(self):
+        """Saves the NodebalancerNode object to the API."""
+        api_params = self.api_update_params()
+        api_handler.nodebalancer_node_update(**api_params)
+
+    def refresh(self):
+        """Refreshes the NodebalancerNode object with a new API call."""
+        new_inst = NodebalancerNode.find(api_id=self.api_id, config=self.config_id)
+        for attr in self.direct_attrs:
+            setattr(self, attr.local_name, getattr(new_inst, attr.local_name))
+        del new_inst
+
+    def destroy(self):
+        """Deletes the NodebalancerNode object."""
+        api_handler.nodebalancer_node_delete(nodeid=self.api_id)
+
+    def __repr__(self):
+        return "<NodebalancerNode api_id=%d, label='%s'>" % (self.api_id, self.label)
 
 
 class NodebalancerTest:
@@ -238,7 +334,6 @@ class NodebalancerTest:
         print "~~~ Creating config for nodebalancer"
         print
         conf = NodebalancerConfig.create(nodebalancer=nodebalancer)
-        print
         print conf
         print "nodebalancer = %s" % (conf.nodebalancer,)
         print
@@ -255,6 +350,33 @@ class NodebalancerTest:
         print
         searched_conf = NodebalancerConfig.search(nodebalancer=nodebalancer)[0]
         assert searched_conf.api_id == conf.api_id
+
+
+        node_suffix = "".join(random.sample(SUFFIX_CHARS, SUFFIX_LEN))
+        node_name = "chube-test-%s" % (node_suffix,)
+        print "~~~ Adding node '%s' to the config" % (node_name,)
+        print
+        node = NodebalancerNode.create(config=conf, label=node_name, address="192.168.127.127:53")
+        print node
+        print
+
+        
+        print "~~~ Changing the node's weight"
+        print
+        node.weight = 119
+        node.save()
+        
+
+        print "~~~ Searching for the node"
+        print
+        searched_node = NodebalancerNode.find(config=conf, api_id=node.api_id)
+        assert node.weight == searched_node.weight
+        assert node.label == searched_node.label
+
+
+        print "~~~ Destroying node '%s'" % (node.label)
+        print
+        node.destroy()
 
 
         print "~~~ Destroying config '%s'" % (repr(conf))
