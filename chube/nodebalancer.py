@@ -174,6 +174,20 @@ class NodebalancerConfig(Model):
         a = [cls.from_api_dict(d) for d in api_handler.nodebalancer_config_list(nodebalancerid=nodebalancer, configid=kwargs["api_id"])]
         return a[0]
 
+    # The `nodes` attribute
+    def _nodes_getter(self):
+        return NodebalancerNode.search(config=self.api_id)
+    def _nodes_setter(self, val):
+        raise NotImplementedError("Cannot set `nodes` directly; use `add_node` instead.")
+    nodes = property(_nodes_getter, _nodes_setter)
+
+    @RequiresParams("label", "address")
+    def add_node(self, **kwargs):
+        """Creates a new Node for the Nodebalancer and returns it.
+
+           See NodebalancerNode.create.__doc__ for param info."""
+        return NodebalancerNode.create(config=self.api_id, label=kwargs["label"], address=kwargs["address"])
+
     def save(self):
         """Saves the NodebalancerConfig object to the API."""
         api_params = self.api_update_params()
@@ -375,7 +389,7 @@ class NodebalancerTest:
         node_name = "chube-test-%s" % (node_suffix,)
         print "~~~ Adding node '%s' to the config" % (node_name,)
         print
-        node = NodebalancerNode.create(config=conf, label=node_name, address="192.168.127.127:53")
+        node = conf.add_node(label=node_name, address="192.168.127.127:53")
         print node
         print
 
@@ -385,6 +399,14 @@ class NodebalancerTest:
         node.weight = 119
         node.save()
         
+
+        print "~~~ Listing Config's nodes"
+        print
+        node_list = conf.nodes
+        print node_list
+        print
+        assert node.api_id in [n.api_id for n in node_list]
+
 
         print "~~~ Searching for the node"
         print
