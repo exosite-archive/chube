@@ -65,6 +65,17 @@ class Nodebalancer(Model):
         new_nodebalancer_id = rval[u"NodeBalancerID"]
         return cls.find(api_id=new_nodebalancer_id)
 
+    # The `configs` attribute
+    def _configs_getter(self):
+        return NodebalancerConfig.search(nodebalancer=self.api_id)
+    def _configs_setter(self, val):
+        raise NotImplementedError("Cannot set `configs` directly; use `add_config` instead.")
+    configs = property(_configs_getter, _configs_setter)
+
+    def add_config(self, **kwargs):
+        """Creates a new Config for the Nodebalancer and returns it."""
+        return NodebalancerConfig.create(nodebalancer=self.api_id)
+
     def save(self):
         """Saves the Nodebalancer object to the API."""
         api_params = self.api_update_params()
@@ -333,7 +344,7 @@ class NodebalancerTest:
         
         print "~~~ Creating config for nodebalancer"
         print
-        conf = NodebalancerConfig.create(nodebalancer=nodebalancer)
+        conf = nodebalancer.add_config()
         print conf
         print "nodebalancer = %s" % (conf.nodebalancer,)
         print
@@ -344,6 +355,14 @@ class NodebalancerTest:
         conf.protocol = "tcp"
         conf.port = 11210
         conf.save()
+
+
+        print "~~~ Listing Nodebalancer configs"
+        print
+        conf_list = nodebalancer.configs
+        print conf_list
+        print
+        assert conf.api_id in [c.api_id for c in conf_list]
 
 
         print "~~~ Searching for that config"
