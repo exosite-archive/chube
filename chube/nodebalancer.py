@@ -73,8 +73,24 @@ class Nodebalancer(Model):
     configs = property(_configs_getter, _configs_setter)
 
     def add_config(self, **kwargs):
-        """Creates a new Config for the Nodebalancer and returns it."""
+        """Creates a new NodebalancerConfig for the Nodebalancer and returns it."""
         return NodebalancerConfig.create(nodebalancer=self.api_id)
+
+    def search_configs(self, **kwargs):
+        """Returns the list of NodebalancerConfig instances that match the given criteria."""
+        a = [NodebalancerConfig.from_api_dict(api_dict) for api_dict in api_handler.nodebalancer_config_list(nodebalancerid=self.api_id)]
+        for k, v in kwargs.items():
+            a = [config for config in a if getattr(config, k) == v]
+        return a
+
+    def find_config(self, **kwargs):
+        """Returns a single NodebalancerConfig instance that matches the given criteria.
+
+           Raises an exception if there's not exactly one match."""
+        a = self.search_configs(**kwargs)
+        if len(a) < 1: raise RuntimeError("No NodebalancerConfig found with the given criteria (%s)" % (kwargs,))
+        if len(a) > 1: raise RuntimeError("More than one NodebalancerConfig found with the given criteria (%s)" % (kwargs,))
+        return a[0]
 
     def save(self):
         """Saves the Nodebalancer object to the API."""
@@ -381,7 +397,7 @@ class NodebalancerTest:
 
         print "~~~ Searching for that config"
         print
-        searched_conf = NodebalancerConfig.search(nodebalancer=nodebalancer)[0]
+        searched_conf = nodebalancer.find_config(port=conf.port)
         assert searched_conf.api_id == conf.api_id
 
 
