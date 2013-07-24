@@ -115,7 +115,7 @@ class Linode(Model):
         """Returns the list of Linode instances that match the given criteria.
         
            The special paramater `label_begins` allows you to case-insensitively
-           match the beginning of the location string. For example,
+           match the beginning of the label string. For example,
            `Linode.search(label_begins='web-')`."""
         a = [cls.from_api_dict(d) for d in api_handler.linode_list()]
         if kwargs.has_key("label_begins"):
