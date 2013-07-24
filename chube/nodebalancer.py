@@ -204,6 +204,22 @@ class NodebalancerConfig(Model):
            See NodebalancerNode.create.__doc__ for param info."""
         return NodebalancerNode.create(config=self.api_id, label=kwargs["label"], address=kwargs["address"])
 
+    def search_nodes(self, **kwargs):
+        """Returns the list of NodebalancerNode instances that match the given criteria."""
+        a = [NodebalancerNode.from_api_dict(api_dict) for api_dict in api_handler.nodebalancer_node_list(configid=self.api_id)]
+        for k, v in kwargs.items():
+            a = [config for config in a if getattr(config, k) == v]
+        return a
+
+    def find_node(self, **kwargs):
+        """Returns a single NodebalancerNode instance that matches the given criteria.
+
+           Raises an exception if there's not exactly one match."""
+        a = self.search_nodes(**kwargs)
+        if len(a) < 1: raise RuntimeError("No NodebalancerNode found with the given criteria (%s)" % (kwargs,))
+        if len(a) > 1: raise RuntimeError("More than one NodebalancerNode found with the given criteria (%s)" % (kwargs,))
+        return a[0]
+
     def save(self):
         """Saves the NodebalancerConfig object to the API."""
         api_params = self.api_update_params()
@@ -277,12 +293,21 @@ class NodebalancerNode(Model):
     def search(cls, **kwargs):
         """Returns the list of NodebalancerNode instances that match the given criteria.
         
-           At least `config` is required. It can be a NodebalancerCOnfig object or a numeric
-           Config ID."""
+           At least `config` is required. It can be a NodebalancerConfig object or a numeric
+           Config ID.
+           
+           The special paramater `label_begins` allows you to case-insensitively match the
+           beginning of the label string. For example,
+           `NodebalancerNode.search(config=my_conf, label_begins='web-')`."""
         config = kwargs["config"]
         if type(config) is not int: config = config.api_id
         a = [cls.from_api_dict(d) for d in api_handler.nodebalancer_node_list(configid=config)]
         del kwargs["config"]
+
+        if kwargs.has_key("label_begins"):
+            a = [linode_obj for linode_obj in a if
+                 linode_obj.label.lower().startswith(kwargs["label_begins"].lower())]
+            del kwargs["label_begins"]
 
         for k, v in kwargs.items():
             a = [conf for conf in a if getattr(conf, k) == v]
@@ -426,7 +451,7 @@ class NodebalancerTest:
 
         print "~~~ Searching for the node"
         print
-        searched_node = NodebalancerNode.find(config=conf, api_id=node.api_id)
+        searched_node = conf.find_node(api_id=node.api_id)
         assert node.weight == searched_node.weight
         assert node.label == searched_node.label
 
