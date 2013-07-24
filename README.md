@@ -6,10 +6,6 @@ Chube is a Python library providing an object-oriented interface to the
 It's very easy to use. But don't take my word for it; check out some
 [examples](#examples)!
 
-Chube supports the **Linode**, **StackScript**, **Utility**, and **DNS**
-sections of the API spec. But **NodeBalancer** is on its way.
-
-
 <a name="installation"></a>
 Installation
 ------------------------------------------------------------
@@ -225,6 +221,42 @@ Continuing the last example,
     record = domain.find_record(name="mail")
     record.destroy()
 ```
+
+### Create a Nodebalancer and name it
+
+```python
+    dallas = Datacenter.find(label_begins='dallas')
+    balancer = Nodebalancer.create(datacenter=dallas, payment_term=1)
+    balancer.label = "my-kickass-nodebalancer"
+    balancer.save()
+```
+
+### Add a Config to a Nodebalancer
+
+Continuing the example above...
+
+```python
+    balancer_config = balancer.add_config(add_config)
+    balancer_config.protocol = "http"
+    balancer_config.port = 80
+    balancer_config.save()
+```
+
+### Add a Node to a Nodebalancer config
+
+```python
+    http_config = balancer.find_config(protocol="http", port=80)
+    node = http_config.add_node(label="webserver-06", address="192.168.255.255:80)
+```
+
+### Change a node's attributes
+
+```python
+    node_to_change = balancer_config.find_node(label="webserver-14")
+    node_to_change.weight += 50
+    node_to_change.save()
+```
+
 
 [linode-api]: https://www.linode.com/api/
 [tjfontaines]: https://github.com/tjfontaine/linode-python
