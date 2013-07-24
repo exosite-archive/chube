@@ -90,7 +90,7 @@ To list each Linode with its public IP address,
 
 ```python
     p = Plan.find(label="Linode 1024")
-    d = Datecenter.find(location_begins="dallas")
+    d = Datacenter.find(location_begins="dallas")
     node = Linode.create(plan=p, datacenter=d, payment_term=1)
 ```
 
