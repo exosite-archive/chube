@@ -78,12 +78,12 @@ give you an idea of the conventions to expect.
         print node.label
 ```
 
-To list each Linode with its public IP address,
+To list each Linode with its public IP address(es),
 
 ```python
     for node in Linode.search(label_begins='foo-'):
-        pub_ip = [ip for ip in node.ipaddresses if ip.is_public]
-        print node.label + "\t" + pub_ip
+        pub_ips = [ip for ip in node.ipaddresses if ip.is_public]
+        print node.label + "\t" + pub_ips
 ```
 
 ### Create a Linode
