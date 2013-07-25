@@ -236,7 +236,7 @@ Continuing the last example,
 Continuing the example above...
 
 ```python
-    balancer_config = balancer.add_config(add_config)
+    balancer_config = balancer.add_config()
     balancer_config.protocol = "http"
     balancer_config.port = 80
     balancer_config.save()
