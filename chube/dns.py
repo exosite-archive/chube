@@ -134,8 +134,13 @@ class Domain(Model):
         return Record.find(domain=self.api_id, api_id=rval["ResourceID"])
 
     def search_records(self, **kwargs):
-        """Returns the list of Record instances that match the given criteria."""
+        """Returns the list of Record instances that match the given criteria.
+        
+           Has a special `name_begins` parameter that does what you'd expect."""
         a = [Record.from_api_dict(api_dict) for api_dict in api_handler.domain_resource_list(domainid=self.api_id)]
+        if kwargs.has_key("name_begins"):
+            a = [record for record in a if record.name.lower().startswith(kwargs["name_begins"].lower())]
+            del kwargs["name_begins"]
         for k, v in kwargs.items():
             a = [record for record in a if getattr(record, k) == v]
         return a
