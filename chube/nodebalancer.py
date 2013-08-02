@@ -1,6 +1,6 @@
 """Module for Nodebalancer-related models."""
 from .api import api_handler
-from .util import RequiresParams
+from .util import RequiresParams, keywords_only
 from .model import *
 
 
@@ -23,6 +23,7 @@ class Nodebalancer(Model):
     ]
 
     @classmethod
+    @keywords_only
     def search(cls, **kwargs):
         """Returns the list of Nodebalancer instances that match the given criteria.
         
@@ -39,6 +40,7 @@ class Nodebalancer(Model):
         return a
 
     @classmethod
+    @keywords_only
     def find(cls, **kwargs):
         """Returns a single Nodebalancer instance that matches the given criteria.
 
@@ -52,6 +54,7 @@ class Nodebalancer(Model):
 
     @classmethod
     @RequiresParams("datacenter", "payment_term")
+    @keywords_only
     def create(cls, **kwargs):
         """Creates a new Nodebalancer.
 
@@ -72,10 +75,12 @@ class Nodebalancer(Model):
         raise NotImplementedError("Cannot set `configs` directly; use `add_config` instead.")
     configs = property(_configs_getter, _configs_setter)
 
+    @keywords_only
     def add_config(self, **kwargs):
         """Creates a new NodebalancerConfig for the Nodebalancer and returns it."""
         return NodebalancerConfig.create(nodebalancer=self.api_id)
 
+    @keywords_only
     def search_configs(self, **kwargs):
         """Returns the list of NodebalancerConfig instances that match the given criteria."""
         a = [NodebalancerConfig.from_api_dict(api_dict) for api_dict in api_handler.nodebalancer_config_list(nodebalancerid=self.api_id)]
@@ -83,6 +88,7 @@ class Nodebalancer(Model):
             a = [config for config in a if getattr(config, k) == v]
         return a
 
+    @keywords_only
     def find_config(self, **kwargs):
         """Returns a single NodebalancerConfig instance that matches the given criteria.
 
@@ -151,6 +157,7 @@ class NodebalancerConfig(Model):
 
     @classmethod
     @RequiresParams("nodebalancer")
+    @keywords_only
     def create(cls, **kwargs):
         """Creates a new NodebalancerConfig.
 
@@ -163,6 +170,7 @@ class NodebalancerConfig(Model):
 
     @classmethod
     @RequiresParams("nodebalancer")
+    @keywords_only
     def search(cls, **kwargs):
         """Returns the list of NodebalancerConfig instances that match the given criteria.
         
@@ -179,6 +187,7 @@ class NodebalancerConfig(Model):
 
     @classmethod
     @RequiresParams("api_id", "nodebalancer")
+    @keywords_only
     def find(cls, **kwargs):
         """Returns a single NodebalancerConfig instance that matches the given criteria.
 
@@ -198,12 +207,14 @@ class NodebalancerConfig(Model):
     nodes = property(_nodes_getter, _nodes_setter)
 
     @RequiresParams("label", "address")
+    @keywords_only
     def add_node(self, **kwargs):
         """Creates a new Node for the Nodebalancer and returns it.
 
            See NodebalancerNode.create.__doc__ for param info."""
         return NodebalancerNode.create(config=self.api_id, label=kwargs["label"], address=kwargs["address"])
 
+    @keywords_only
     def search_nodes(self, **kwargs):
         """Returns the list of NodebalancerNode instances that match the given criteria."""
         a = [NodebalancerNode.from_api_dict(api_dict) for api_dict in api_handler.nodebalancer_node_list(configid=self.api_id)]
@@ -211,6 +222,7 @@ class NodebalancerConfig(Model):
             a = [config for config in a if getattr(config, k) == v]
         return a
 
+    @keywords_only
     def find_node(self, **kwargs):
         """Returns a single NodebalancerNode instance that matches the given criteria.
 
@@ -276,6 +288,7 @@ class NodebalancerNode(Model):
 
     @classmethod
     @RequiresParams("config", "label", "address")
+    @keywords_only
     def create(cls, **kwargs):
         """Creates a new NodebalancerNode.
 
@@ -290,6 +303,7 @@ class NodebalancerNode(Model):
 
     @classmethod
     @RequiresParams("config")
+    @keywords_only
     def search(cls, **kwargs):
         """Returns the list of NodebalancerNode instances that match the given criteria.
         
@@ -315,6 +329,7 @@ class NodebalancerNode(Model):
 
     @classmethod
     @RequiresParams("config")
+    @keywords_only
     def find(cls, **kwargs):
         """Returns a single NodebalancerNode instance that matches the given criteria.
 

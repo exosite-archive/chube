@@ -2,7 +2,7 @@
 import json
 
 from .api import api_handler
-from .util import RequiresParams
+from .util import RequiresParams, keywords_only
 from .model import *
 from .distribution import Distribution
 
@@ -69,6 +69,7 @@ class Stackscript(Model):
     distributions = property(_distributions_getter, _distributions_setter)
 
     @classmethod
+    @keywords_only
     def search(cls, **kwargs):
         """Returns the list of Stackscript instances that match the given criteria.
         
@@ -85,6 +86,7 @@ class Stackscript(Model):
         return a
 
     @classmethod
+    @keywords_only
     def find(cls, **kwargs):
         """Returns a single Stackscript instance that matches the given criteria.
 
@@ -98,6 +100,7 @@ class Stackscript(Model):
 
     @classmethod
     @RequiresParams("label", "distributions", "script")
+    @keywords_only
     def create(cls, **kwargs):
         """Creates a new Stackscript.
 

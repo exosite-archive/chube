@@ -1,5 +1,6 @@
 from .api import api_handler
 from .model import *
+from .util import keywords_only
 
 class Distribution(Model):
     direct_attrs = [
@@ -12,6 +13,7 @@ class Distribution(Model):
     ]
 
     @classmethod
+    @keywords_only
     def search(cls, **kwargs):
         """Returns the list of Distribution instances that match the given criteria.
  
@@ -28,6 +30,7 @@ class Distribution(Model):
         return a
 
     @classmethod
+    @keywords_only
     def find(cls, **kwargs):
         """Returns a single Distribution instance that matches the given criteria.
 

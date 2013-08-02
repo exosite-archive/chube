@@ -2,6 +2,7 @@ from decimal import Decimal
 
 from .api import api_handler
 from .model import *
+from .util import keywords_only
 
 class Plan(Model):
     direct_attrs = [
@@ -14,6 +15,7 @@ class Plan(Model):
     ]
 
     @classmethod
+    @keywords_only
     def search(cls, **kwargs):
         """Returns the list of all Plan instances."""
         a = [cls.from_api_dict(d) for d in api_handler.avail_linodeplans()]
@@ -22,6 +24,7 @@ class Plan(Model):
         return a
 
     @classmethod
+    @keywords_only
     def find(cls, **kwargs):
         """Returns a single Plan instance that matches the given criteria.
 

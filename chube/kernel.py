@@ -1,5 +1,6 @@
 from .api import api_handler
 from .model import *
+from .util import keywords_only
 
 class Kernel(Model):
     direct_attrs = [
@@ -10,6 +11,7 @@ class Kernel(Model):
     ]
 
     @classmethod
+    @keywords_only
     def search(cls, **kwargs):
         """Returns the list of all Kernel instances that match the given criteria.
 
@@ -26,6 +28,7 @@ class Kernel(Model):
         return a
 
     @classmethod
+    @keywords_only
     def find(cls, **kwargs):
         """Returns a single Kernel instance that matches the given criteria.
 

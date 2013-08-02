@@ -1,5 +1,6 @@
 from .api import api_handler
 from .model import *
+from .util import keywords_only
 
 class Datacenter(Model):
     direct_attrs = [
@@ -8,6 +9,7 @@ class Datacenter(Model):
     ]
 
     @classmethod
+    @keywords_only
     def search(cls, **kwargs):
         """Returns the list of Datacenter instances that match the given criteria.
 
@@ -24,6 +26,7 @@ class Datacenter(Model):
         return a
 
     @classmethod
+    @keywords_only
     def find(cls, **kwargs):
         """Returns a single Datacenter instance that matches the given criteria.
 

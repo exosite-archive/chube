@@ -5,7 +5,7 @@
 import time
 
 from .api import api_handler
-from .util import RequiresParams
+from .util import RequiresParams, keywords_only
 from .model import *
 from .datacenter import Datacenter
 
@@ -111,6 +111,7 @@ class Linode(Model):
     pending_jobs = property(_pending_jobs_getter, _pending_jobs_setter)
 
     @classmethod
+    @keywords_only
     def search(cls, **kwargs):
         """Returns the list of Linode instances that match the given criteria.
         
@@ -127,6 +128,7 @@ class Linode(Model):
         return a
 
     @classmethod
+    @keywords_only
     def find(cls, **kwargs):
         """Returns a single Linode instance that matches the given criteria.
 
@@ -140,6 +142,7 @@ class Linode(Model):
 
     @classmethod
     @RequiresParams("plan", "datacenter", "payment_term")
+    @keywords_only
     def create(cls, **kwargs):
         """Creates a new Linode.
 
@@ -179,6 +182,7 @@ class Linode(Model):
         rval = api_handler.linode_ip_addprivate(linodeid=self.api_id)
         return IPAddress.find(linode=self.api_id, api_id=rval["IPAddressID"])
 
+    @keywords_only
     def create_disk(self, **kwargs):
         """Adds a disk. See `help(Disk.create)` for more info."""
         return Disk.create(linode=self.api_id, **kwargs)
@@ -187,6 +191,7 @@ class Linode(Model):
         """Determines whether the instance is up."""
         return self.status == Linode.STATUS_RUNNING
 
+    @keywords_only
     def boot(self, **kwargs):
         """Boots the Linode.
  
@@ -200,6 +205,7 @@ class Linode(Model):
         rval = api_handler.linode_boot(**api_args)
         return Job.find(linode=self.api_id, api_id=rval["JobID"], include_finished=True)
 
+    @keywords_only
     def reboot(self, **kwargs):
         """Reboots the Linode.
         
@@ -213,12 +219,14 @@ class Linode(Model):
         rval = api_handler.linode_reboot(**api_args)
         return Job.find(linode=self.api_id, api_id=rval["JobID"], include_finished=True)
 
+    @keywords_only
     def shutdown(self, **kwargs):
         """Shuts down the Linode."""
         rval = api_handler.linode_shutdown(linodeid=self.api_id)
         return Job.find(linode=self.api_id, api_id=rval["JobID"], include_finished=True)
 
     @RequiresParams("plan", "datacenter", "payment_term")
+    @keywords_only
     def clone(self, **kwargs):
         """Clones a Linode and gives you full privileges to it.
 
@@ -234,6 +242,7 @@ class Linode(Model):
         return Linode.find(api_id=rval["LinodeID"])
 
     @RequiresParams("plan")
+    @keywords_only
     def resize(self, **kwargs):
         """Moves a Linode to a new server on a different Plan.
 
@@ -264,6 +273,7 @@ class IPAddress(Model):
 
     @classmethod
     @RequiresParams("linode")
+    @keywords_only
     def search(cls, **kwargs):
         """Returns the list of IPAddress instances that match the given criteria.
         
@@ -279,6 +289,7 @@ class IPAddress(Model):
 
     @classmethod
     @RequiresParams("api_id", "linode")
+    @keywords_only
     def find(cls, **kwargs):
         """Returns a single IPAddress instance that matches the given criteria.
 
@@ -374,6 +385,7 @@ class Config(Model):
 
     @classmethod
     @RequiresParams("linode", "kernel", "label", "disks")
+    @keywords_only
     def create(cls, **kwargs):
         """Creates a new Config.
 
@@ -402,6 +414,7 @@ class Config(Model):
 
     @classmethod
     @RequiresParams("linode")
+    @keywords_only
     def search(cls, **kwargs):
         """Returns the list of Config instances that match the given criteria.
         
@@ -417,6 +430,7 @@ class Config(Model):
 
     @classmethod
     @RequiresParams("api_id", "linode")
+    @keywords_only
     def find(cls, **kwargs):
         """Returns a single Config instance that matches the given criteria.
 
@@ -477,6 +491,7 @@ class Disk(Model):
 
     @classmethod
     @RequiresParams("linode")
+    @keywords_only
     def search(cls, **kwargs):
         """Returns the list of Disk instances that match the given criteria.
         
@@ -492,6 +507,7 @@ class Disk(Model):
 
     @classmethod
     @RequiresParams("api_id", "linode")
+    @keywords_only
     def find(cls, **kwargs):
         """Returns a single Disk instance that matches the given criteria.
 
@@ -504,6 +520,7 @@ class Disk(Model):
         return a[0] 
 
     @classmethod
+    @keywords_only
     def create(cls, **kwargs):
         """Creates a new Disk.
         
@@ -520,6 +537,7 @@ class Disk(Model):
 
     @classmethod
     @RequiresParams("linode", "stackscript", "ss_input", "distribution", "label", "size", "root_pass")
+    @keywords_only
     def create_from_stackscript(cls, **kwargs):
         """Creates a new Disk based on a Stackscript.
 
@@ -545,6 +563,7 @@ class Disk(Model):
 
     @classmethod
     @RequiresParams("linode", "distribution", "label", "size", "root_pass")
+    @keywords_only
     def create_from_distribution(cls, **kwargs):
         """Creates a new Disk based on a Distribution.
 
@@ -571,6 +590,7 @@ class Disk(Model):
 
     @classmethod
     @RequiresParams("linode", "label", "fstype", "size")
+    @keywords_only
     def create_straightup(cls, **kwargs):
         """Creates a new Disk.
 
@@ -673,6 +693,7 @@ class Job(Model):
 
     @classmethod
     @RequiresParams("linode")
+    @keywords_only
     def search(cls, **kwargs):
         """Returns the list of Job instances that match the given criteria.
         
@@ -694,6 +715,7 @@ class Job(Model):
         return a
 
     @classmethod
+    @keywords_only
     def find(cls, **kwargs):
         """Returns a single Job instance that matches the given criteria.
 

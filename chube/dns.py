@@ -65,6 +65,7 @@ class Domain(Model):
     axfr_ips = property(_axfr_ips_getter, _axfr_ips_setter)
 
     @classmethod
+    @keywords_only
     def search(cls, **kwargs):
         """Returns the list of Domain instances that match the given criteria.
         
@@ -88,6 +89,7 @@ class Domain(Model):
         return a
 
     @classmethod
+    @keywords_only
     def find(cls, **kwargs):
         """Returns a single Domain instance that matches the given criteria.
 
@@ -101,6 +103,7 @@ class Domain(Model):
 
     @classmethod
     @RequiresParams("domain", "zone_type")
+    @keywords_only
     def create(cls, **kwargs):
         """Creates a new Domain.
 
@@ -120,6 +123,7 @@ class Domain(Model):
         return cls.find(api_id=new_domain_id)
 
     @RequiresParams("record_type")
+    @keywords_only
     def add_record(self, **kwargs):
         """Adds a DNS record to the domain.
 
@@ -134,6 +138,7 @@ class Domain(Model):
         return Record.find(domain=self.api_id, api_id=rval["ResourceID"])
 
     @keywords_only
+    @keywords_only
     def search_records(self, **kwargs):
         """Returns the list of Record instances that match the given criteria.
         
@@ -146,6 +151,7 @@ class Domain(Model):
             a = [record for record in a if getattr(record, k) == v]
         return a
 
+    @keywords_only
     def find_record(self, **kwargs):
         """Returns a single Record instance that matches the given criteria.
  
@@ -239,12 +245,14 @@ class Record(Model):
     priority = property(priority_getter, priority_setter)
 
     @classmethod
+    @keywords_only
     def create(cls, **kwargs):
         """DNS records can't be created directly. Use `Linode.add_record()` instead."""
         raise NotImplementedError(cls.__doc__)
 
     @classmethod
     @RequiresParams("domain")
+    @keywords_only
     def search(cls, **kwargs):
         """Returns the list of Record instances that match the given criteria.
         
@@ -260,6 +268,7 @@ class Record(Model):
 
     @classmethod
     @RequiresParams("domain")
+    @keywords_only
     def find(cls, **kwargs):
         """Returns a single Record instance that matches the given criteria.
 
