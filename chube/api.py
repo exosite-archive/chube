@@ -28,5 +28,11 @@ class Handler:
             self._api = linode_api.Api(self.api_key)
         return self._api
 
+    def start_batch(self):
+        """Starts batching requests together. Call `end_batch` when done."""
+        self._api.batching = True
+
+    def end_batch
+
 
 api_handler = Handler()

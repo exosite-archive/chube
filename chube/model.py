@@ -47,6 +47,12 @@ class DirectAttr:
 class Model(object):
     direct_attrs = []
 
+    def __init__(self):
+        self._init_cache()
+
+    def _init_cache(self):
+        pass
+
     @classmethod
     def from_api_dict(cls, api_dict):
         """Factory method that instantiates Model subclasses from API-returned dicts."""

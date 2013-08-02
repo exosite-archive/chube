@@ -68,6 +68,11 @@ class Linode(Model):
                    update_as="watchdog")
     ]
 
+    def _init_cache(self):
+        """Resets, or initially creates, the attribute cache."""
+        self._cache = {}
+        self._cache["ipaddresses"] = None
+
     # The `datacenter` attribute is done with a deferred lookup.
     def _datacenter_getter(self):
         return Datacenter.find(api_id=self.datacenter_id)
@@ -77,7 +82,9 @@ class Linode(Model):
 
     # The `ipaddresses` attribute
     def _ipaddresses_getter(self):
-        return IPAddress.search(linode=self.api_id)
+        if self._cache["ipaddresses"] is None:
+            self._cache["ipaddresses"] = IPAddress.search(linode=self.api_id)
+        return self._cache["ipaddresses"]
     def _ipaddresses_setter(self, val):
         raise NotImplementedError("Cannot set `ipaddresses` directly; use `add_private_ip` instead.")
     ipaddresses = property(_ipaddresses_getter, _ipaddresses_setter)
@@ -114,14 +121,30 @@ class Linode(Model):
     def search(cls, **kwargs):
         """Returns the list of Linode instances that match the given criteria.
         
-           The special paramater `label_begins` allows you to case-insensitively
+           The special parameter `label_begins` allows you to case-insensitively
            match the beginning of the label string. For example,
-           `Linode.search(label_begins='web-')`."""
+           `Linode.search(label_begins='web-')`.
+           
+           The special parameter `prefetch` takes an array of attribute names.
+           search() will fetch these attributes before returning your results.
+           Currently supported are:
+               
+               ipaddresses"""
         a = [cls.from_api_dict(d) for d in api_handler.linode_list()]
+        prefetch_attrs = []
+
         if kwargs.has_key("label_begins"):
             a = [linode_obj for linode_obj in a if
                  linode_obj.label.lower().startswith(kwargs["label_begins"].lower())]
             del kwargs["label_begins"]
+
+        if kwargs.has_key("prefetch"):
+            prefetch_attrs = kwargs["prefetch"]
+            del kwargs["prefetch"]
+            api_handler.start_batch()
+            for attr in prefetch_attrs:
+                getattr(self, attr)
+
         for k, v in kwargs.items():
             a = [linode_obj for linode_obj in a if getattr(linode_obj, k) == v]
         return a
