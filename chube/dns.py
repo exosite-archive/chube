@@ -1,6 +1,6 @@
 """Module for DNS-related models."""
 from .api import api_handler
-from .util import RequiresParams
+from .util import RequiresParams, keywords_only
 from .model import *
 
 
@@ -133,6 +133,7 @@ class Domain(Model):
         rval = api_handler.domain_resource_create(**api_args)
         return Record.find(domain=self.api_id, api_id=rval["ResourceID"])
 
+    @keywords_only
     def search_records(self, **kwargs):
         """Returns the list of Record instances that match the given criteria.
         

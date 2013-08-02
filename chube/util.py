@@ -17,3 +17,14 @@ class RequiresParams:
                                        (param, f.__name__))
             return f(*f_args, **f_kwargs)
         return with_reqs
+
+def keywords_only(f):
+    """Function decorator that makes the function accept only keyword params.
+
+       All this does right now is make sure the error message is clearer when
+       you try to pass a non-keyword param."""
+    def f_new(*f_args, **f_kwargs):
+        if len(f_args) > 1:
+            raise ValueError("This method accepts only keyword arguments. See `help({0})`".format((f.__name__)))
+        return f(*f_args, **f_kwargs)
+    return f_new
