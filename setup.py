@@ -2,7 +2,7 @@ from distutils.core import setup
 
 setup(
         name='chube',
-        version='0.1.17',
+        version='0.1.18',
         author='Exosite',
         author_email='danslimmon@exosite.com',
         packages=['chube'],
