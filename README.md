@@ -116,7 +116,6 @@ To list each Linode with its public IP address(es),
     node = Linode.find(label_begins='some-unique-linode')
     distro = Distribution.find(label="Debian 7")
     disk = node.create_disk(
-        linode=node,
         distribution=distro,
         label='foo-disk',
         size=8000,

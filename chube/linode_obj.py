@@ -185,6 +185,10 @@ class Linode(Model):
     @keywords_only
     def create_disk(self, **kwargs):
         """Adds a disk. See `help(Disk.create)` for more info."""
+        if kwargs.has_key('linode'):
+            if type(kwargs['linode']) is not int: kwargs['linode'] = kwargs['linode'].api_id
+            if kwargs['linode'] != self.api_id:
+                raise RuntimeError("Received 'linode' argument that differed from the instance")
         return Disk.create(linode=self.api_id, **kwargs)
 
     def is_up(self):
@@ -920,6 +924,23 @@ class LinodeTest:
         swap_disk_suffix = "".join(random.sample(SUFFIX_CHARS, SUFFIX_LEN))
         swap_disk_name = "chube-test-%s" % (swap_disk_suffix,)
         swap_disk = linode_obj.create_disk(label=swap_disk_name, fstype="swap", size=1000)
+        config.disks = [disk, None, swap_disk] + 6 * [None]
+        config.save()
+
+
+        print "~~~ Making sure that Linode.create_disk correctly handles extra 'linode' argument"
+        print
+        a_suffix = "".join(random.sample(SUFFIX_CHARS, SUFFIX_LEN))
+        b_suffix = "".join(random.sample(SUFFIX_CHARS, SUFFIX_LEN))
+        a_disk_name = "chube-test-%s" % (a_suffix,)
+        b_disk_name = "chube-test-%s" % (b_suffix,)
+        a_disk = linode_obj.create_disk(linode=linode_obj, label=a_disk_name, fstype="swap", size=1000)
+        try:
+            b_disk = linode_obj.create_disk(linode=2, label=b_disk_name, fstype="swap", size=1000)
+        except RuntimeError:
+            # This is the expected behavior. You shouldn't be able to call create_disk on a Linode
+            # and pass a different Linode.
+            pass
         config.disks = [disk, None, swap_disk] + 6 * [None]
         config.save()
 
