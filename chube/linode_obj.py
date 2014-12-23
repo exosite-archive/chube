@@ -180,7 +180,7 @@ class Linode(Model):
     def add_private_ip(self):
         """Adds a private IP address to the Linode and returns it."""
         rval = api_handler.linode_ip_addprivate(linodeid=self.api_id)
-        return IPAddress.find(linode=self.api_id, api_id=rval["IPAddressID"])
+        return IPAddress.find(linode=self.api_id, api_id=rval["IPADDRESSID"])
 
     @keywords_only
     def create_disk(self, **kwargs):
