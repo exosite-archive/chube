@@ -129,11 +129,13 @@ class Domain(Model):
 
            `record_type` (required): "A", "MX", "CNAME", etc.
            `name` (optional): The left-hand side of the DNS record.
-           `target` (optional): The right-hand side of the DNS record."""
+           `target` (optional): The right-hand side of the DNS record.
+           `ttl_sec` (optional): The TTL in seconds. 0 for Linode's default."""
         api_args = {"domainid": self.api_id}
         api_args["type"] = kwargs["record_type"]
         if kwargs.has_key("name"): api_args["name"] = kwargs["name"]
         if kwargs.has_key("target"): api_args["target"] = kwargs["target"]
+        if kwargs.has_key("ttl_sec"): api_args["ttl_sec"] = kwargs["ttl_sec"]
         rval = api_handler.domain_resource_create(**api_args)
         return Record.find(domain=self.api_id, api_id=rval["ResourceID"])
 
@@ -247,7 +249,7 @@ class Record(Model):
     @classmethod
     @keywords_only
     def create(cls, **kwargs):
-        """DNS records can't be created directly. Use `Linode.add_record()` instead."""
+        """DNS records can't be created directly. Use `Domain.add_record()` instead."""
         raise NotImplementedError(cls.__doc__)
 
     @classmethod
