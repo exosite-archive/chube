@@ -136,6 +136,7 @@ class Domain(Model):
         if kwargs.has_key("name"): api_args["name"] = kwargs["name"]
         if kwargs.has_key("target"): api_args["target"] = kwargs["target"]
         if kwargs.has_key("ttl_sec"): api_args["ttl_sec"] = kwargs["ttl_sec"]
+        if kwargs.has_key("priority"): api_args["priority"] = kwargs["priority"]
         rval = api_handler.domain_resource_create(**api_args)
         return Record.find(domain=self.api_id, api_id=rval["ResourceID"])
 
